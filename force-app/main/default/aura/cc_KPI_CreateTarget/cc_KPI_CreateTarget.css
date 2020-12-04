@@ -1,0 +1,6 @@
+.THIS {
+    background-color: aliceblue;
+}
+.THIS .label-hidden > label {
+    display: none;
+}

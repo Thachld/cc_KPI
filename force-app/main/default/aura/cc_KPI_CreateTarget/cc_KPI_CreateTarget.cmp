@@ -1,0 +1,189 @@
+<aura:component controller = "cc_KPI_TargetController" implements="flexipage:availableForRecordHome,force:hasRecordId,lightning:actionOverride" access = "global">
+    <aura:attribute name = "kpitarget" type = "KPI_Target__c" default="{ 'sobjectType': 'KPI_Target__c', 'Name': '','Status__c':'New', 'Approval_Status__c':'New'}" />
+    <aura:attribute name = "kpitargetdtls" type = "Object[]"/>
+
+    <aura:attribute name = "quarterPick" type = "List"/>    
+    <aura:attribute name = "typePick" type = "List"/>   
+    <aura:attribute name = "month1" type= "String"/>
+    <aura:attribute name = "month2" type= "String"/>
+    <aura:attribute name = "month3" type= "String"/> 
+    
+    <aura:handler name = "init"	value="{!this}"	action="{!c.doInit}" />
+                                                            
+    <div class="slds-grid slds-wrap">  
+        <div class="slds-size--1-of-1 slds-large-size--1-of-1 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <p>KPI Target</p>
+        </div>
+        
+        <div class="slds-size--1-of-1 slds-large-size--1-of-2 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <label>KPI Target Name<abbr class="slds-required" >*</abbr></label>
+            <lightning:input type = "text" 
+                        aura:id = "kpifield"    
+                        label=""     
+                        required="true"                                           
+                        value = "{!v.kpitarget.Name}" 
+                        variant="label-hidden"                            
+                        class="vna_text"
+                        messageWhenValueMissing="Field Is required!"
+                        />            
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-2 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <label>Kpi Quarter<abbr class="slds-required">*</abbr></label>
+            <!-- Piclist Quarter__c -->
+            <lightning:select   aura:id = "kpifield"                                      
+                            required = "true"
+                            variant = "label-hidden"
+                            class = "label-hidden"
+                            label = ""                           
+                            value = "{!v.kpitarget.Quarter__c}"
+                            messageWhenValueMissing="Field Is required!">
+
+                <option value = "">--None--</option>
+                <aura:iteration items = "{!v.quarterPick}" var = "item">
+                    <option text = "{!item.label}" 
+                        value = "{!item.value}" 
+                        selected = "{!item.value==v.kpitarget.Quarter__c}" 
+                    />
+                </aura:iteration>
+            </lightning:select> 
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-2 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <label>KPI Type<abbr class="slds-required">*</abbr></label>            
+            <!-- Piclist Type__c -->
+            <lightning:select   aura:id = "kpifield"                                      
+                            required = "true"
+                            variant = "label-hidden"
+                            class = "label-hidden"
+                            label = ""                           
+                            value = "{!v.kpitarget.Type__c}"
+                            onchange="{!c.handleSelectedKPIType}"
+                            messageWhenValueMissing="Field Is required!">
+
+                <option value = "">--None--</option>
+                <aura:iteration items = "{!v.typePick}" var = "item">
+                    <option text = "{!item.label}" 
+                        value = "{!item.value}" 
+                        selected = "{!item.value==v.kpitarget.Type__c}" 
+                    />
+                </aura:iteration>
+            </lightning:select>   
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-2 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <label>Manager</label>
+            <p><lightning:formattedText value="{!v.kpitarget.ManagerName__c}" /></p>
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-1 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <label>Description</label>
+            <lightning:textarea label = "" 
+                            class = "label-hidden"                                                
+                            value = "{!v.kpitarget.Description__c}"                                    
+                            variant = "label-hidden"/>              
+        </div>
+
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-1 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <p>KPI Target Details</p>
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-1 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <table class="slds-table slds-max-medium-table_stacked-horizontal slds-table_fixed-layout">
+                <thead>
+                    <tr>   
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="No">
+                            <a href="javascript:void(0);">                   
+                                <span class="slds-truncate" title="Sales">No</span>                           
+                            </a>                             
+                        </th>                 
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Sales">
+                            <a href="javascript:void(0);">                   
+                                <span class="slds-truncate" title="Sales">Sale</span>                                  
+                            </a>                
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Industry">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Industry">Industry</span>                                                                           
+                            </a>               
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Agency">
+                            <a href="javascript:void(0);" >                    
+                                <span class="slds-truncate" title="Agency">Agency</span>                                            
+                            </a>               
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Special Client?">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Special Client?">Special Client?</span>                                            
+                            </a>               
+                        </th>
+                        
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Xaxis?">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Xaxis?</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Spending ' + v.month1}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Spending + {!v.month1}</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Spending ' + v.month2}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Spending + {!v.month2}</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Spending ' + v.month3}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Spending + {!v.month3}</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Cash ' + v.month1}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Cash + {!v.month1}</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Cash ' + v.month2}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Cash + {!v.month2}</span>                                            
+                            </a>                
+                        </th>
+    
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="{!'Cash ' + v.month3}">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="Status">Cash + {!v.month3}</span>                                            
+                            </a>                
+                        </th>
+
+                        <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="action">
+                            <a href="javascript:void(0);">                    
+                                <span class="slds-truncate" title="action"></span>                                            
+                            </a>                
+                        </th>
+                    </tr>
+                    
+                </thead>
+                <tbody>
+                    <aura:iteration items="{!v.kpitargetdtls}" var="record" indexVar="sNo" >
+                        <c:cc_KPI_TargetDetail detail = "{!record}" type = "{!v.kpitarget.Type__c}" month1 = "{!v.month1}" month2 = "{!v.month2}" month3 = "{!v.month3}" sNo ="{!sNo + 1}"/>
+                    </aura:iteration>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slds-size--1-of-1 slds-large-size--1-of-1 slds-p-top_medium slds-p-left_medium slds-p-right_medium">
+            <lightning:button variant="brand" label="Save" title="Save" onclick="{! c.handleSave }"/>
+            <lightning:button variant="neutral" label="Cancel" title="Cancel" onclick="{! c.handleCancel }"/>
+        </div>
+    </div>   
+    
+</aura:component>	
