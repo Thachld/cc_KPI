@@ -58,12 +58,9 @@ public with sharing class cc_KPI_CaculateController {
         deleteDailyKPIs();
 
         calculationActivities();
-        calculationAmount();
+        calculationAmount();        
 
-        if( this.mapMetrics.size() > 0 ){
-            dailyKPICalculation();
-        }
-
+        System.debug('this.dailyKPIs.size() =>' + this.dailyKPIs.size());
         if( this.dailyKPIs.size() > 0 ){
             insert this.dailyKPIs;
 
@@ -84,6 +81,9 @@ public with sharing class cc_KPI_CaculateController {
         Datetime minDateTime = Datetime.newInstance(this.MKPI.From_Date__c.year(), this.MKPI.From_Date__c.month(), this.MKPI.From_Date__c.day(), 0,0,0);       
         Datetime maxDateTime = Datetime.newInstance(this.MKPI.To_Date__c.year(), this.MKPI.To_Date__c.month(), this.MKPI.To_Date__c.day(), 23,59,59); 
 
+        System.debug('minDateTime =>' + minDateTime);
+        System.debug('maxDateTime =>' + maxDateTime);
+
         sps = [SELECT Id, KPI__c, KPI__r.KPIAutoNumber__c, KPI_Number__c, 
                     Payment_Amount__c, Spending_Amount__c, KPI_Category__c
                     FROM Sale_Spending_Payment__c 
@@ -95,7 +95,7 @@ public with sharing class cc_KPI_CaculateController {
                                                 Xaxis__c Xaxis__c, 
                                                 Special_client__c Special_client__c,                                                 
                                                 Agency__c Agency__c, 
-                                                Sale_Region__c Sale_Region__c,
+                                                Is_HN_Region__c Is_HN_Region__c,
                                                 Xaxis_Owner__c Xaxis_Owner__c,   
                                                 Strategic_Client__c Strategic_Client__c,                                        
                                             SUM(Total_Spending__c) Total_Spending__c
@@ -103,7 +103,7 @@ public with sharing class cc_KPI_CaculateController {
                                             WHERE syn_date__c >=: minDateTime 
                                                 AND syn_date__c <=:  maxDateTime 
                                                 AND Sale__c = :this.MKPI.Sales__c                                         
-                                            GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Sale_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
+                                            GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
                 cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
                 qc.Amount = (Decimal)arr.get('Total_Spending__c');                   
@@ -153,7 +153,7 @@ public with sharing class cc_KPI_CaculateController {
                     }
                 }else {
                     KPICat = 'Unknown';
-                }             
+                }            
 
                 qc.Industry =  Industry;
                 qc.KPICategory = KPICat;
@@ -166,12 +166,14 @@ public with sharing class cc_KPI_CaculateController {
 
             }
 
+            System.debug('spendings =>' + spendings);
+
 
             for(AggregateResult arr  :  [SELECT Industry__c Industry__c,
                                                 Xaxis__c Xaxis__c, 
                                                 Special_client__c Special_client__c,                                                 
                                                 Agency__c Agency__c, 
-                                                Sale_Region__c Sale_Region__c,
+                                                Is_HN_Region__c Is_HN_Region__c,
                                                 Xaxis_Owner__c Xaxis_Owner__c, 
                                                 Strategic_Client__c Strategic_Client__c,                                                    
                                             SUM(Final_Amount__c) Final_Amount__c
@@ -182,7 +184,7 @@ public with sharing class cc_KPI_CaculateController {
                                                 AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
                                                 AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') 
                                                 AND Sale__c = :this.MKPI.Sales__c                                            
-                                            GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Sale_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
+                                            GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
                 cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
                 qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
@@ -237,30 +239,30 @@ public with sharing class cc_KPI_CaculateController {
                     }
                 }else {
                     KPICat = 'Unknown';
-                }                
+                }             
 
                 qc.Industry =  Industry;
                 qc.KPICategory = KPICat;
                 qc.SpecialClient = Specialclient;
-                qc.Xaxis = xaxis;
+                qc.Xaxis = xaxis;   
                 qc.Agency = Agency;
                 qc.exists = false;
             
                 payments.add(qc);           
             }
 
+            System.debug('payments =>' + payments);
 
             for(Sale_Spending_Payment__c  sp: sps){
-                Boolean hasSpending = false;
-                Boolean hasPayment = false;
-
+                sp.Spending_Amount__c = 0;
+                sp.Payment_Amount__c = 0;
+               
                 if(spendings != null){
                     for(cc_QCData_wraper spending: spendings){
 
                         if(sp.KPI_Category__c == spending.KPICategory){
                             sp.Spending_Amount__c += spending.Amount==null?0: spending.Amount;
-                            spending.exists = true;
-                            hasSpending = true;
+                            spending.exists = true;                            
                         }
                     }
                 }
@@ -270,19 +272,10 @@ public with sharing class cc_KPI_CaculateController {
                     for(cc_QCData_wraper payment: payments){
                         if(sp.KPI_Category__c == payment.KPICategory){                            
                             sp.Payment_Amount__c += payment.Amount==null?0: payment.Amount;
-                            payment.exists = true;
-                            hasPayment = true;
+                            payment.exists = true;                           
                         }
                     }
-                }
-
-                if(!hasSpending){
-                    sp.Spending_Amount__c = 0;                        
-                }
-
-                if(!hasPayment){
-                    sp.Payment_Amount__c = 0;         
-                }                     
+                }                                   
             }
             
             update sps;
@@ -408,21 +401,7 @@ public with sharing class cc_KPI_CaculateController {
                     this.mapMetrics.get(datekey).add(kpi);
                 }else{
                     this.mapMetrics.put(datekey, new List<cc_kpimetrics_wraper>{kpi});
-                }
-            }else if(type == 'Meeting'){
-                Decimal value = (Decimal)arr.get('value');
-    
-                cc_kpimetrics_wraper kpi = new cc_kpimetrics_wraper();
-
-                kpi.kpidate = createDate;
-                kpi.kpivalue = value;
-                kpi.kpimetrics = 'Meeting';
-
-                if(this.mapMetrics.containsKey(datekey)){                   
-                    this.mapMetrics.get(datekey).add(kpi);
-                }else{
-                    this.mapMetrics.put(datekey, new List<cc_kpimetrics_wraper>{kpi});
-                }
+                }            
             }else if(type == 'Email'){
                 Decimal value = (Decimal)arr.get('value');
     
@@ -465,44 +444,43 @@ public with sharing class cc_KPI_CaculateController {
                 this.mapMetrics.put(datekey, new List<cc_kpimetrics_wraper>{kpi});
             }                                
         }
-    } 
 
-
-    public void dailyKPICalculation(){
-        for(String datekey: this.mapMetrics.keySet()){
-            List<cc_kpimetrics_wraper> kpis = this.mapMetrics.get(datekey);
-
-            if(kpis != null){
-                Daily_KPI__c dailykpi = new Daily_KPI__c();
-                String day = kpis[0].kpidate.day() < 10?'0' + String.valueOf(kpis[0].kpidate.day()) : String.valueOf(kpis[0].kpidate.day());
-                String month = kpis[0].kpidate.month() < 10?'0' + String.valueOf(kpis[0].kpidate.month()) : String.valueOf(kpis[0].kpidate.month());
-
-                dailykpi.Name =  day + '/' + month + '/' + String.valueOf(kpis[0].kpidate.year());
-                dailykpi.KPI__c = this.MKPI.Id;
-                dailykpi.Date__c = kpis[0].kpidate;
-
-                System.debug('kpis =>' + kpis.size());
-                for(cc_kpimetrics_wraper kpi : kpis){ 
-                    if( kpi.kpimetrics == 'NewLead' ){  
-                        dailykpi.NumberOfNewLeads__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'NewOpp' ){
-                        dailykpi.NumberOfNewOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'Closed Won' ){
-                        dailykpi.CloseLostOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'Closed Lost' ){
-                        dailykpi.CloseWonOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'Call' ){
-                        dailykpi.NumberOfCalls__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'Meeting' ){
-                        dailykpi.NumberOfMeeting__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }else if( kpi.kpimetrics == 'Email' ){
-                        dailykpi.NumberOfEmail__c = kpi.kpivalue == null?0: kpi.kpivalue;
-                    }       
+        if(this.mapMetrics.size() > 0){
+            for(String datekey: this.mapMetrics.keySet()){
+                List<cc_kpimetrics_wraper> kpis = this.mapMetrics.get(datekey);
+    
+                if(kpis != null){
+                    Daily_KPI__c dailykpi = new Daily_KPI__c();
+                    String day = kpis[0].kpidate.day() < 10?'0' + String.valueOf(kpis[0].kpidate.day()) : String.valueOf(kpis[0].kpidate.day());
+                    String month = kpis[0].kpidate.month() < 10?'0' + String.valueOf(kpis[0].kpidate.month()) : String.valueOf(kpis[0].kpidate.month());
+    
+                    dailykpi.Name =  day + '/' + month + '/' + String.valueOf(kpis[0].kpidate.year());
+                    dailykpi.KPI__c = this.MKPI.Id;
+                    dailykpi.Date__c = kpis[0].kpidate;
+    
+                    System.debug('kpis =>' + kpis.size());
+                    for(cc_kpimetrics_wraper kpi : kpis){ 
+                        if( kpi.kpimetrics == 'NewLead' ){  
+                            dailykpi.NumberOfNewLeads__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'NewOpp' ){
+                            dailykpi.NumberOfNewOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'Closed Won' ){
+                            dailykpi.CloseLostOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'Closed Lost' ){
+                            dailykpi.CloseWonOpps__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'Call' ){
+                            dailykpi.NumberOfCalls__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'Meeting' ){
+                            dailykpi.NumberOfMeeting__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }else if( kpi.kpimetrics == 'Email' ){
+                            dailykpi.NumberOfEmail__c = kpi.kpivalue == null?0: kpi.kpivalue;
+                        }       
+                    }
+    
+                    this.dailyKPIs.add(dailykpi);
                 }
-
-                this.dailyKPIs.add(dailykpi);
             }
         }
-    }
+    } 
 
 }

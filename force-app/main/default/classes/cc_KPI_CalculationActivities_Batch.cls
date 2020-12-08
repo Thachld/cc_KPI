@@ -213,6 +213,9 @@ global class cc_KPI_CalculationActivities_Batch implements Database.Batchable<sO
 
             if(kpis != null){
                 Daily_KPI__c dailykpi = new Daily_KPI__c();
+                String day = kpis[0].kpidate.day() < 10?'0' + String.valueOf(kpis[0].kpidate.day()) : String.valueOf(kpis[0].kpidate.day());
+                String month = kpis[0].kpidate.month() < 10?'0' + String.valueOf(kpis[0].kpidate.month()) : String.valueOf(kpis[0].kpidate.month());
+                dailykpi.Name =  day + '/' + month + '/' + String.valueOf(kpis[0].kpidate.year());
                 dailykpi.KPI__c = mapSale.get(sales);
                 dailykpi.Date__c = kpis[0].kpidate;
 

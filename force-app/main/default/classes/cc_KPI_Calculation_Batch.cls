@@ -253,8 +253,8 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                 payments = mapPayment.get(kpi.Sales__c);
 
                 for(Sale_Spending_Payment__c  sp: sps){
-                    Boolean hasSpending = false;
-                    Boolean hasPayment = false;
+                    sp.Spending_Amount__c = 0;
+                    sp.Payment_Amount__c = 0;
 
                     if(spendings != null){
                         for(cc_QCData_wraper spending: spendings){
@@ -262,8 +262,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                             if(sp.KPI_Category__c == spending.KPICategory){
                                 Decimal amount = spending.Amount==null?0: spending.Amount;
                                 sp.Spending_Amount__c = sp.Spending_Amount__c ==null?0 : sp.Spending_Amount__c + amount;
-                                spending.exists = true;
-                                hasSpending = true;
+                                spending.exists = true;                                
                             }
                         }
                     }
@@ -274,18 +273,9 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                             if(sp.KPI_Category__c == payment.KPICategory){    
                                 Decimal amount = payment.Amount==null?0: payment.Amount;                        
                                 sp.Payment_Amount__c = sp.Payment_Amount__c ==null?0 : sp.Payment_Amount__c + amount;
-                                payment.exists = true;
-                                hasPayment = true;
+                                payment.exists = true;                                
                             }
                         }
-                    }
-
-                    if(!hasSpending){
-                        sp.Spending_Amount__c = 0;                        
-                    }
-
-                    if(!hasPayment){
-                        sp.Payment_Amount__c = 0;         
                     }
                     
                     this.listUpSertSP.add(sp);                    

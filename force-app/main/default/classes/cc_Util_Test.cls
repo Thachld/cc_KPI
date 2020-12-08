@@ -16,9 +16,17 @@ public class cc_Util_Test {
 
         Date fromdt = Date.newInstance(2020, 1, 1);
         String clause1 = '';
-        String clause2 = 'Type__c NOT IN (\'Internal\',\'External\')';
+        String clause2 = 'Type__c NOT IN (\'Internal\',\'External\')';      
+        String pFieldTotal = 'Total_Payment__c';       
+        String pObjectAccum = 'QC_Account__c'; 
+        String pFieldAccum = 'AccountOwner__c';
+        String pFieldAccumAlias = 'AccountOwner';
+        String pAgregateField = 'Total_Payment__c';        
+        String pAggregateFunc = 'SUM';  
+        Integer BatchSize = 500; 
 
-        cc_Batch_Parameter__c params = cc_initData.initbatchParamSetting('AccountPaymentAccum', fromdt, null, clause1, clause2);
+        cc_Batch_Parameter__c params = cc_initData.initbatchParamSetting('AccountPaymentAccum', fromdt, null, clause1, clause2, pFieldTotal, 
+                                                                        pFieldAccum, pFieldAccumAlias,pObjectAccum, pAgregateField, pAggregateFunc, BatchSize);
         insert params;
 
         cc_Batch_Parameter__c testparams = cc_Util.getBatchParameter('AccountPaymentAccum');
@@ -143,4 +151,13 @@ public class cc_Util_Test {
        // cc_initData.initQCAccountData(id qc1, id qc2, id qc3, id qc4,id qc5, id qc6)
     }
     
+
+    @isTest
+    public static void testUtil4(){
+        String quarter = '4-2020';
+
+        List<String> periods = cc_Util.getPeriodbyQuarter(quarter);
+
+        System.assertEquals(3, periods.size());
+    }
 }

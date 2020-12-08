@@ -4,23 +4,7 @@ public with sharing class cc_KPI_TargetController {
         public string value {get;set;}
         @AuraEnabled    
         public string label {get;set;}  
-    }
-
-    @AuraEnabled//(cacheable=true)
-    public static List<User> searchUsers(String searchTerm , Integer limitSize){
-        try {
-            List<User> users = new List<User>(); 
-            searchTerm='%' + searchTerm.trim() + '%';
-
-            
-            users = [SELECT Id, Name, Trac_Name__c FROM User WHERE Profile.Name = 'Sales Profile' AND (Name LIKE :searchTerm OR Trac_Name__c LIKE :searchTerm) LIMIT :limitSize];
-            
-            return users;
-        } catch (Exception e) {
-            throw new AuraHandledException(e.getMessage());
-        }
-    }
-    
+    } 
     
 
     @AuraEnabled

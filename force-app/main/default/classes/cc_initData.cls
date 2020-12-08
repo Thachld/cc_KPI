@@ -33,6 +33,7 @@ public class cc_initData {
                                 Username = uniqueName + '@cococ' + orgId + '.com',
                                 EmailEncodingKey = 'ISO-8859-1',
                                 Alias = lName,
+                                Trac_Name__c = lName,
                                 TimeZoneSidKey = 'Asia/Ho_Chi_Minh',
                                 LocaleSidKey = 'en_US',
                                 LanguageLocaleKey = 'en_US',

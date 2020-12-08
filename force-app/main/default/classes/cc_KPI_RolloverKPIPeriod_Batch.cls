@@ -2,12 +2,14 @@ global class cc_KPI_RolloverKPIPeriod_Batch implements Database.Batchable<sObjec
     public String kpiPeriod {get;set;}
     public Date minDate {get;set;}
     public Date maxDate {get;set;}    
+    public Map<String,List<User>> mapManager {get;set;}
     public List<KPI__c> insertKPIs {get;set;}     
     public List<cc_DMLResult_wrapper> lserrors  {get;set;}
 
     public cc_KPI_RolloverKPIPeriod_Batch(String period) {
         this.lserrors = new List<cc_DMLResult_wrapper>();
         this.insertKPIs = new List<KPI__c>();
+        this.mapManager = new Map<String,List<User>>();
         this.kpiPeriod = period;
 
         date dtToday = date.today();
@@ -34,6 +36,37 @@ global class cc_KPI_RolloverKPIPeriod_Batch implements Database.Batchable<sObjec
     }
 
     global void execute(Database.BatchableContext bc, List<User> scope){
+        String SaleLKPIrecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
+        String SaleMmgKPIrecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
+
+
+        for(User user: scope){
+            if(mapManager.containsKey(user.ManagerId)){
+                mapManager.get(user.ManagerId).add(user);
+            }else {
+                mapManager.put(user.ManagerId, new List<User>{user});
+            }
+        }
+
+        for(String mngId : mapManager.keySet()){
+            KPI__c kpi = new KPI__c();
+
+            // kpi.RecordtypeId = SaleMmgKPIrecordtypeId;
+            // kpi.Name = sale.Trac_Name__c + ':Manager KPI - ' + this.kpiPeriod;
+            // kpi.Period__c = this.kpiPeriod;
+            // kpi.KPI_Category__c = sale.KPI_Category__c;
+            // kpi.SalesManager__c  = sale.ManagerId;
+            // kpi.Sales__c = sale.Id;
+            // kpi.From_Date__c = this.minDate;
+            // kpi.To_Date__c = this.maxDate;
+            // kpi.KPI_Number__c = 'KPI' + sale + '_' + this.kpiPeriod;
+            // kpi.Status__c = 'New';
+            // kpi.OwnerId = sale.Id;
+            // this.insertKPIs.add(kpi);
+
+
+        }
+
 
         for(User sale: scope){
             KPI__c kpi = new KPI__c();
