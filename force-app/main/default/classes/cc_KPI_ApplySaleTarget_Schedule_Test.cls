@@ -37,24 +37,30 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
         urs.add(u7);
         urs.add(u8);       
 
-        insert urs;
+        insert urs;        
+        insert u9;
 
-        
-
-        for(User us: urs){
-            Date startDate = today.toStartOfMonth();
-            Date endate = startDate.addMonths(1) - 1;
-            KPI__c kpi = cc_initData.initKPI(us.alias + '-' + period, us.Id, period, startDate, endate, us.KPI_Category__c);
-
+        String kpisalerecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
+        String kpimngrecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
+        Date startDate = today.toStartOfMonth();
+        Date endate = startDate.addMonths(1) - 1;
+        for(User us: urs){            
+            KPI__c kpi = cc_initData.initKPI(us.alias + '-' + period, us.Id, period, startDate, endate, us.KPI_Category__c, u9.Id, kpisalerecordtypeId );
             kpis.add(kpi);
         }
+        KPI__c mngkpi = cc_initData.initKPI(u9.alias + '-' + period, u9.Id, period, startDate, endate, u9.KPI_Category__c, u9.Id, kpimngrecordtypeId );
+        kpis.add(mngkpi);
 
         insert kpis;
 
-        insert u9;
-        String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sales_KPI').getRecordTypeId(); 
+        
+        String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
         KPI_Target__c target = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, salerecordtypeId, '4-2020');
-        insert target;
+        insert target;        
+
+        String mngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
+        KPI_Target__c mngtarget = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, mngrecordtypeId, '4-2020');
+        insert mngtarget;
 
         for(User us: urs){            
             String[] kpicat;
@@ -66,6 +72,16 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
                 KPI_Target_Detail__c detail = cc_initData.initKPITargetdetail(us.Alias, us.Id, target.Id, '4-2020', period, cat);
                 details.add(detail);
             }
+        }
+
+        String[] kpicat;
+        if(!String.isBlank(u9.KPI_Category__c)){
+            kpicat = u9.KPI_Category__c.split(';');
+        }
+
+        for(String cat: kpicat){
+            KPI_Target_Detail__c mngdetail = cc_initData.initKPITargetdetail(u9.Alias, u9.Id, mngtarget.Id, '4-2020', period, cat);
+            details.add(mngdetail);
         }
 
         insert details;

@@ -1,8 +1,8 @@
 public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     Set<String> kpiTeamIds = new Set<String>();
     Set<String> kpiManagerIds = new Set<String>();
-    Id teamrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sales_KPI').getRecordTypeId();    
-    Id managerrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Manager_KPI').getRecordTypeId();
+    Id teamrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId();    
+    Id managerrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId();
     /**
     * bulkBefore
     *

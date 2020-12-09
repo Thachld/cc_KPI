@@ -39,7 +39,8 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
         return Database.getQueryLocator([SELECT Id, Sales__c, 
                                                 SalesManager__c, 
                                                 KPI_Category__c                                                
-                                        FROM KPI__c WHERE Period__c =: kpiPeriod]);
+                                        FROM KPI__c WHERE Period__c =: kpiPeriod
+                                            AND  RecordType.DeveloperName = 'Sale_KPI']);
     }
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){

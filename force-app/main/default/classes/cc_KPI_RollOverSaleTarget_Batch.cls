@@ -33,23 +33,38 @@ global class cc_KPI_RollOverSaleTarget_Batch implements Database.Batchable<SObje
 
 
         for(String mngId: mapManager.keySet()){      
-            String recordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sales_KPI').getRecordTypeId();       
-            KPI_Target__c target = new KPI_Target__c();
+            if(mapUser.containsKey(mngId)){
+                String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId();     
+                String mngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId();         
+                System.debug('mngId = >' + mngId);
 
-            System.debug('mngId = >' + mngId);
-            target.Name = 'KPI Team member - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;
-            target.Quarter__c = this.quater;
-            target.Sale_Manager__c = mngId;
-            target.Approval_Status__c = 'New';
-            target.Status__c = 'New';
-            target.recordtypeId = recordtypeId;
-            target.OwnerId = mngId;
+                //Team KPI
+                KPI_Target__c target = new KPI_Target__c();            
+                target.Name = 'KPI Team member - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;
+                target.Quarter__c = this.quater;
+                target.Sale_Manager__c = mngId;
+                target.Approval_Status__c = 'New';
+                target.Status__c = 'New';
+                target.recordtypeId = salerecordtypeId;
+                target.OwnerId = mngId;
 
-            if(mapUser.get(mngId).Working_direct__c){
-                target.Include_Manager__c = true;
+                if(mapUser.get(mngId).Working_direct__c){
+                    target.Include_Manager__c = true;
+                }
+                kpitargettoInsert.add(target);
+
+                //Manager KPI
+                KPI_Target__c mngtarget = new KPI_Target__c();            
+                mngtarget.Name = 'KPI Manager - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;
+                mngtarget.Quarter__c = this.quater;
+                mngtarget.Sale_Manager__c = mngId;
+                mngtarget.Approval_Status__c = 'New';
+                mngtarget.Status__c = 'New';
+                mngtarget.recordtypeId = mngrecordtypeId;
+                mngtarget.OwnerId = mngId;
+
+                kpitargettoInsert.add(mngtarget);
             }
-
-            kpitargettoInsert.add(target);
         }        
 
 

@@ -8,7 +8,11 @@ global class cc_KPI_RollOverTargetDetails_Batch implements Database.Batchable<SO
 
     global Database.QueryLocator start(Database.BatchableContext bc){
         return Database.getQueryLocator([SELECT Id, OwnerId, Status__c, Approval_Status__c, Quarter__c, 
-                                                RecordType.Name, Sale_Manager__c, KPITargetAutoNumber__c, Include_Manager__c
+                                                RecordType.Name, Sale_Manager__c, 
+                                                Sale_Manager__r.KPI_Category__c, 
+                                                Sale_Manager__r.Trac_Name__c, 
+                                                RecordType.DeveloperName,
+                                                KPITargetAutoNumber__c, Include_Manager__c
                                                 FROM KPI_Target__c 
                                                 WHERE Quarter__c = :this.quater
                                                     AND Approval_Status__c = 'New' 
@@ -19,6 +23,7 @@ global class cc_KPI_RollOverTargetDetails_Batch implements Database.Batchable<SO
 
     global void execute (Database.BatchableContext bc, List<KPI_Target__c> scope){     
         Map<String,KPI_Target__c> mapKPIs = new Map<String,KPI_Target__c>();
+        Map<String,KPI_Target__c> mapMngKPIs = new Map<String,KPI_Target__c>();
         Map<String,String> mapManager = new Map<String,String>();
         Map<String,Set<String>> mapKPICat = new Map<String,Set<String>>();
         Map<String,User> mapUser = new Map<String,User>();
@@ -33,11 +38,16 @@ global class cc_KPI_RollOverTargetDetails_Batch implements Database.Batchable<SO
 
 
         for(KPI_Target__c kpi: scope){
-            if(kpi.RecordType.Name == 'Sales KPI'){
+            if(kpi.RecordType.DeveloperName == 'Sale_KPI'){
                 mapKPIs.put(kpi.Id, kpi);
-            }            
+            }else{
+                mapMngKPIs.put(kpi.Id, kpi);
+            }           
         }
 
+        /* -- -------------------------------------------------------- -------- */
+        /* -- Start Roll-Over KPI target detail for sale member of Sale Team -- */
+        /* -- -------------------------------------------------------- -------- */
         System.debug('mapKPIs =>' + mapKPIs.size());
         for(String kpi: mapKPIs.keyset()){
             mapManager.put(mapKPIs.get(kpi).Sale_Manager__c, kpi);
@@ -168,11 +178,52 @@ global class cc_KPI_RollOverTargetDetails_Batch implements Database.Batchable<SO
             }
         }
 
+        /* -- -------------------------------------------------------- -------- */
+        /* -- End- Roll-Over KPI target detail for sale member of Sale Team --- */
+        /* -- -------------------------------------------------------- -------- */
+
+
+        for(String kpiId :mapMngKPIs.keyset()){
+            KPI_Target__c mngTarget = mapMngKPIs.get(kpiId);
+
+            String[] kpicat;
+            String targetNumber = mngTarget.KPITargetAutoNumber__c == null? '': mngTarget.KPITargetAutoNumber__c;
+            String saleTracName = mngTarget.Sale_Manager__r.Trac_Name__c==null?'' : mngTarget.Sale_Manager__r.Trac_Name__c;
+            String category = mngTarget.Sale_Manager__r.KPI_Category__c==null?'':mngTarget.Sale_Manager__r.KPI_Category__c;
+
+            System.debug('mngcategory=>' + category);
+            if(!String.isBlank(category)){
+                kpicat = category.split(';');
+            }
+
+            if(kpicat.size() > 0){
+                for(String cat: kpicat){
+                    List<String> periods = new List<String>();
+                    periods = cc_util.getPeriodbyQuarter(quater.trim());
+                    
+                    for(String period : periods){
+                        String targetEXNumber = targetNumber.trim() + '' + period.trim() + '' + saleTracName.trim() + '' + cat.trim();                        
+                        KPI_Target_Detail__c kpitarget = new KPI_Target_Detail__c();
+                        kpitarget.KPITargetDetailNumber__c = targetEXNumber;
+                        kpitarget.Name = saleTracName + ' - ' + period;
+                        kpitarget.KPI_Category__c = cat;
+                        kpitarget.KPI_Target__c = mngTarget.Id;
+                        kpitarget.Quarter__c = quater;
+                        kpitarget.Period__c = period;
+                        kpitarget.Sale__c = mngTarget.Sale_Manager__c;
+
+                        kpitargets.add(kpitarget);
+                    }
+                }
+            }
+        }
+
+
         System.debug('kpitargets =>' + kpitargets.size());
         if(kpitargets.size() > 0){            
 
             Schema.SObjectField field = KPI_Target_Detail__c.Fields.KPITargetDetailNumber__c;
-            Database.upsert(kpitargets, field ,false);
+            Database.upsert(kpitargets, field ,true);
             //insert kpitargets;
         }
 

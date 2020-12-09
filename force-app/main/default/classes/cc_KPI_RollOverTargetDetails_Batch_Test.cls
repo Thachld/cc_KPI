@@ -25,7 +25,7 @@ public class cc_KPI_RollOverTargetDetails_Batch_Test {
         
         insert u22;
 
-        String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sales_KPI').getRecordTypeId(); 
+        String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
         KPI_Target__c target = cc_initData.initKPITarget('Target Sales Tesst', u1.Id, salerecordtypeId, '4-2020');
         target.Approval_status__c = 'New';
         insert target;
@@ -34,6 +34,12 @@ public class cc_KPI_RollOverTargetDetails_Batch_Test {
         target1.Approval_status__c = 'New';
         target1.Include_Manager__c = true;
         insert target1;
+
+
+        String mngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
+        KPI_Target__c target2 = cc_initData.initKPITarget('Target Sales Tesst', u1.Id, mngrecordtypeId, '4-2020');
+        target2.Approval_status__c = 'New';
+        insert target2;
     }
 
     public testmethod static void testRolloverKPItargetdetail(){        
@@ -46,8 +52,8 @@ public class cc_KPI_RollOverTargetDetails_Batch_Test {
         try {
             test.stopTest();
 
-            List<KPI_Target_Detail__c> details = [SELECT Id FROM KPI_Target_Detail__c LIMIT 2];
-            System.assertEquals(2, details.size());
+            List<KPI_Target_Detail__c> details = [SELECT Id FROM KPI_Target_Detail__c LIMIT 3];
+            System.assertEquals(3, details.size());
 
         } catch (Exception ex) {
             

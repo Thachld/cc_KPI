@@ -408,6 +408,21 @@ public class cc_initData {
         return kpi;
     }
 
+    public static KPI__c initKPI(String name, String saleId, String period, Date startdt, Date enddt, String KPIcat, String managerId, String recordtypeId){
+        KPI__c kpi = new KPI__c();
+        kpi.Name =name;
+        kpi.RecordTypeId = recordtypeId;
+        kpi.Sales__c =saleId;
+        kpi.SalesManager__c =managerId;
+        kpi.Period__c = period;
+        kpi.From_Date__c = startdt;
+        kpi.To_Date__c = enddt;
+        kpi.KPI_Category__c = KPIcat;
+        kpi.Status__c = 'New';
+
+        return kpi;
+    }
+
 
     public static Task initTask(String subj , String subtasktype,String OwnerId){
         Task tk = new Task();
