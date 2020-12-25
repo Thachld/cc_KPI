@@ -423,6 +423,14 @@ public class cc_initData {
         return kpi;
     }
 
+    public static Sale_Spending_Payment__c initSaleSpendingPayment(String name, String kpiId, String cat){
+        Sale_Spending_Payment__c saleKPI = new Sale_Spending_Payment__c();                           
+        saleKPI.KPI__c = kpiId;
+        saleKPI.KPI_Category__c = cat;
+        saleKPI.Name = name;              
+        
+        return saleKPI;
+    }
 
     public static Task initTask(String subj , String subtasktype,String OwnerId){
         Task tk = new Task();
