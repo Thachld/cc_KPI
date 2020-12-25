@@ -13,7 +13,8 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
                                                 SalesManager__c, 
                                                 KPI_Category__c    
                                         FROM KPI__c 
-                                        WHERE Period__c = : this.kpiperiod]);
+                                        WHERE Period__c = : this.kpiperiod
+                                            AND Status__c != 'Confirmed']);
     }
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){
@@ -23,7 +24,7 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
 
         for(KPI__c kpi: scope){
             if(kpi.RecordType.DeveloperName == 'Sale_Manager_KPI'){
-                mapKPIManager.put(kpi.SalesManager__c, kpi);
+                mapKPIManager.put(kpi.Sales__c, kpi);
             }
 
             if(String.isBlank(kpi.Sale_Manager_KPI__c)){
@@ -37,9 +38,14 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
 
         for(KPI__c kpi : listKPIsToprocess){
             if(mapKPIManager.containsKey(kpi.SalesManager__c)){
-                kpi.Sale_Manager_KPI__c = mapKPIManager.get(kpi.SalesManager__c).Id;
+                System.debug('kpi.Id = >' + kpi.Id );
+                System.debug('mapKPIManager.get(kpi.SalesManager__c).Id = >' + mapKPIManager.get(kpi.SalesManager__c).Id );
 
-                listKPIsToUpdate.add(kpi);
+                if(kpi.Id != mapKPIManager.get(kpi.SalesManager__c).Id){
+                    kpi.Sale_Manager_KPI__c = mapKPIManager.get(kpi.SalesManager__c).Id;
+
+                    listKPIsToUpdate.add(kpi);
+                }                
             }
         }
 
@@ -50,6 +56,7 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
     }
 
     global void finish(Database.BatchableContext bc){
-
+        cc_KPI_Calculation_MngKPI_Batch batch = new cc_KPI_Calculation_MngKPI_Batch(this.kpiperiod);
+        Database.executeBatch(batch, 100);
     }
 }

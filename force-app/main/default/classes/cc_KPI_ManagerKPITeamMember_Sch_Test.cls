@@ -12,6 +12,9 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
         List<User> urs = new List<User>();
 
         Profile pf = [SELECT ID FROM Profile WHERE Name = 'Sales Profile'];
+        User u0 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(0), null, 'All', 'HN',false);
+        insert u0;
+
         User u1 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false);
         insert u1;
 
@@ -36,12 +39,12 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
         KPI__c kpi0 = cc_initData.initKPI(u1.alias + '-' + period, u1.Id, period, startDate, endate, u1.KPI_Category__c, u1.Id, salerecordtypeId);    
         insert kpi0;
 
-        KPI__c kpi1 = cc_initData.initKPI(u11.alias + '-' + period, u11.Id, period, startDate, endate, u11.KPI_Category__c, u11.ManagerId, salerecordtypeId);
+        KPI__c kpi1 = cc_initData.initKPI(u11.alias + '-' + period, u11.Id, period, startDate, endate, u1.KPI_Category__c, u1.ManagerId, salerecordtypeId);
         kpi1.Sale_Manager_KPI__c = kpi.Id;
         insert kpi1;
 
-        KPI__c kpi2 = cc_initData.initKPI(u12.alias + '-' + period, u12.Id, period, startDate, endate, u12.KPI_Category__c, u12.Id, salerecordtypeId);
-        kpi2.Sale_Manager_KPI__c = kpi.Id;
+        KPI__c kpi2 = cc_initData.initKPI(u12.alias + '-' + period, u12.Id, period, startDate, endate, u1.KPI_Category__c, u1.Id, salerecordtypeId);
+        kpi2.Sale_Manager_KPI__c = kpi1.Id;
         insert kpi2;       
 
     }
@@ -62,6 +65,25 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
         } catch (Exception ex) {
             
         }
+    }
+
+    public testmethod static void testKPITeammemberSchedule(){        
+
+        Test.startTest();
+
+            Datetime dt = Datetime.now().addMinutes(2);
+            String CRON_EXP = '0 '+ dt.minute() + ' * ' + dt.day() + ' ' + dt.month() + ' ? ' + dt.year();
+
+            
+            String jobId = System.schedule('ManagerKPITeamMember', CRON_EXP, new cc_KPI_ManagerKPITeamMember_Schedule());
+
+            CronTrigger ct = [SELECT id, CronExpression, TimesTriggered, NextFireTime from CronTrigger where id = :jobId];
+            
+            System.assertEquals(CRON_EXP, ct.CronExpression); 
+            System.assertEquals(0, ct.TimesTriggered);
+            
+
+        Test.stopTest();
     }
     
 }

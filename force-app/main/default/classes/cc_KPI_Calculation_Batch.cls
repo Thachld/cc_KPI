@@ -40,7 +40,8 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                                                 SalesManager__c, 
                                                 KPI_Category__c                                                
                                         FROM KPI__c WHERE Period__c =: kpiPeriod
-                                            AND  RecordType.DeveloperName = 'Sale_KPI']);
+                                            AND  RecordType.DeveloperName = 'Sale_KPI'
+                                            AND Status__c != 'Confirmed']);
     }
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){

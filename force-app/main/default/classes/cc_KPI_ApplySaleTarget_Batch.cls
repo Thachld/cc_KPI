@@ -30,18 +30,26 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
         }
 
         if(saleIds != null){        
-            for (KPI_Target_Detail__c target : [SELECT Id, Sale__c, SpendingKPI__c, PaymentKPI__c,  KPI_Category__c, 
-                                                        KPITargetType__c
+            for (KPI_Target_Detail__c target : [SELECT Id, Sale__c, Sale__r.Manager_level__c, SpendingKPI__c, PaymentKPI__c,  KPI_Category__c, 
+                                                        KPITargetType__c, KPI_Target__r.Include_Manager__c, KPI_Target__r.Sale_Manager__c
                                                 FROM KPI_Target_Detail__c 
                                                 WHERE Sale__c IN :saleIds 
                                                 AND Period__c = :this.kpiPeriod
                                                 AND KPI_Target__r.Approval_Status__c = 'Approved']){
-                if(target.KPITargetType__c == 'Sale_KPI'){                                   
-                    if(mapTargets.containsKey(target.Sale__c)){
-                        mapTargets.get(target.Sale__c).add(target);
-                    }else{
-                        mapTargets.put(target.Sale__c,  new List<KPI_Target_Detail__c>{target});
-                    }    
+                if(target.KPITargetType__c == 'Sale_KPI'){    
+                    if(target.KPI_Target__r.Include_Manager__c){
+                        if(mapTargets.containsKey(target.Sale__c)){
+                            mapTargets.get(target.Sale__c).add(target);
+                        }else{
+                            mapTargets.put(target.Sale__c,  new List<KPI_Target_Detail__c>{target});
+                        } 
+                    } else if( String.isBlank(target.Sale__r.Manager_level__c) ) {
+                        if(mapTargets.containsKey(target.Sale__c)){
+                            mapTargets.get(target.Sale__c).add(target);
+                        }else{
+                            mapTargets.put(target.Sale__c,  new List<KPI_Target_Detail__c>{target});
+                        } 
+                    }                       
                 }else{
                     if(mapMngTargets.containsKey(target.Sale__c)){
                         mapMngTargets.get(target.Sale__c).add(target);

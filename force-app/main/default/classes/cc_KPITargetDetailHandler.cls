@@ -1,8 +1,7 @@
 public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     Set<String> kpiTeamIds = new Set<String>();
     Set<String> kpiManagerIds = new Set<String>();
-    Id teamrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId();    
-    Id managerrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId();
+    
     /**
     * bulkBefore
     *
@@ -20,26 +19,25 @@ public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     * any data required into maps prior execution of the trigger.
     */
     public void bulkAfter() {	
-        if(Trigger.isInsert){
-           
-            for(KPI_Target__c target :(List<KPI_Target__c>)Trigger.new){
-                if(!String.isBlank(target.Quarter__c)){
-                    if(target.RecordTypeId == teamrecordtypeId){
-                        kpiTeamIds.add(target.Id);
-                    }else if(target.RecordTypeId == managerrecordtypeId){
-                        kpiManagerIds.add(target.Id);
+        if (Trigger.isUpdate) {     
+            Id SalerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId();    
+            Id MngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId();
+            Map<Id,KPI_Target_Detail__c> newMap = (Map<Id,KPI_Target_Detail__c>)Trigger.newMap; 
+            Map<Id,KPI_Target_Detail__c> oldMap = (Map<Id,KPI_Target_Detail__c>)Trigger.oldMap;     
+
+            for(String tgId: newMap.keyset()){
+                KPI_Target_Detail__c newrq = newMap.get(tgId);
+                KPI_Target_Detail__c oldrq = oldMap.get(tgId);
+                
+                if(newrq.KPITargetType__c == 'Sale_KPI'){
+                    if(newrq.SpendingKPI__c != oldrq.SpendingKPI__c || newrq.PaymentKPI__c != oldrq.PaymentKPI__c){
+                        kpiTeamIds.add(newrq.Id);
                     }
-                    
+                }else if(newrq.KPITargetType__c == 'Sale_Manager_KPI'){
+                    if(newrq.SpendingKPI__c != oldrq.SpendingKPI__c || newrq.PaymentKPI__c != oldrq.PaymentKPI__c){
+                        kpiManagerIds.add(newrq.Id);
+                    }
                 }
-            }
-
-
-        }else if (Trigger.isUpdate) {     
-            Map<Id,KPI_Target__c> newMap = (Map<Id,KPI_Target__c>)Trigger.newMap; 
-            Map<Id,KPI_Target__c> oldMap = (Map<Id,KPI_Target__c>)Trigger.oldMap;     
-
-            for(KPI_Target__c newrq: newMap.values()){
-                KPI_Target__c oldrq = oldMap.get(newrq.Id);
             }
         }			
     }
@@ -111,11 +109,11 @@ public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     public void andFinally() {       
         System.debug('kpiTeamIds =>' + kpiTeamIds.size());
         if(kpiTeamIds.size() > 0){            
-            cc_KPITargetDetail_Async.attemTeamKPITarget(kpiTeamIds);
+            cc_KPITargetDetail_Async.attemptApplySaleKPITarget(kpiTeamIds);
         }
         System.debug('kpiManagerIds =>' + kpiManagerIds.size());
         if(kpiManagerIds.size() >0){
-            cc_KPITargetDetail_Async.attemManagerKPITarget(kpiManagerIds);
+            cc_KPITargetDetail_Async.attemptApplyManagerKPITarget(kpiManagerIds);
         }
     }       
 }
