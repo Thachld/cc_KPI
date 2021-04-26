@@ -5,14 +5,14 @@ public with sharing class cc_KPI_TargetController {
         @AuraEnabled    
         public string label {get;set;}  
     } 
-    
+
 
     @AuraEnabled
     public static List<KPI_Target_Detail__c> getKPIDetailsDB(String targetId){
         try {
             List<KPI_Target_Detail__c> result = new  List<KPI_Target_Detail__c>();
-            result = [SELECT Id, Sale__c, Month__c, KPI_Category__c, 
-                          SpendingKPI__c, PaymentKPI__c, Sale__r.Name , Sale__r.Trac_Name__c, CurrencyIsoCode
+            result = [SELECT Id, Sale__c, Month__c, KPI_Category__c, Sale__r.Sale_Team__c, KPITargetType__c,
+                          SpendingKPI__c, PaymentKPI__c, Sale__r.Name , Sale__r.Trac_Name__c, CurrencyIsoCode, IsEdit__c, LastSyncDateTime__c
                         FROM KPI_Target_Detail__c WHERE KPI_Target__c =:targetId];
 
             return result;
@@ -56,7 +56,7 @@ public with sharing class cc_KPI_TargetController {
     }
 
     @AuraEnabled
-	public static List<PickListWraper> getIndustryPicklistDB(){
+	public static List<PickListWraper> getCategoryPicklistDB(){
 		List<PickListWraper> options = new List<PickListWraper>();
 
 		Schema.DescribeFieldResult result = KPI_Target_Detail__c.KPI_Category__c.getDescribe();

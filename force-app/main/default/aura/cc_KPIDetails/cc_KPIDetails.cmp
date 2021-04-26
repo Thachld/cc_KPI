@@ -33,7 +33,7 @@
 
                         <th class="slds-is-sortable slds-is-resizable" scope="col" aria-label="Trac" style="width: 10%;">
                             <a href="javascript:void(0);">                   
-                                <span class="slds-truncate" title="Trac">Trac</span>                                  
+                                <span class="slds-truncate" title="Trac">Trac Name</span>                                  
                             </a>                
                         </th>
                         

@@ -10,6 +10,7 @@ public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     */
     public void bulkBefore() {  
         //isInsert
+        
     }
     
     /**
@@ -18,8 +19,16 @@ public with sharing class cc_KPITargetDetailHandler implements  cc_ITrigger{
     * This method is called prior to execution of an AFTER trigger. Use this to cache
     * any data required into maps prior execution of the trigger.
     */
-    public void bulkAfter() {	
-        if (Trigger.isUpdate) {     
+    public void bulkAfter() {
+        if(Trigger.isInsert){
+            for(KPI_Target_Detail__c newdl : (List<KPI_Target_Detail__c>) Trigger.new){
+                if(newdl.KPITargetType__c == 'Sale_KPI'){
+                    kpiTeamIds.add(newdl.Id);                    
+                }else if(newdl.KPITargetType__c == 'Sale_Manager_KPI'){
+                    kpiManagerIds.add(newdl.Id);                    
+                }
+            }
+        }else if (Trigger.isUpdate) {     
             Id SalerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId();    
             Id MngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId();
             Map<Id,KPI_Target_Detail__c> newMap = (Map<Id,KPI_Target_Detail__c>)Trigger.newMap; 

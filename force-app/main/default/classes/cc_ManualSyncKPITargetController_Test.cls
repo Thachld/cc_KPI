@@ -1,6 +1,6 @@
 @istest
-public class cc_KPITargetDetailHandler_Test {
-    @TestSetup
+public class cc_ManualSyncKPITargetController_Test {
+    @TestSetup    
     static void testSetup(){
         List<User> urs = new List<User>();
         List<KPI__c> kpis = new List<KPI__c>();
@@ -51,14 +51,12 @@ public class cc_KPITargetDetailHandler_Test {
         
         String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
         KPI_Target__c target = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, salerecordtypeId, quarter);
-        target.Status__c ='Approved';
         insert target;  
         
         
 
         String mngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
-        KPI_Target__c mngtarget = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, mngrecordtypeId, quarter);
-        mngtarget.Status__c ='Approved'; 
+        KPI_Target__c mngtarget = cc_initData.initKPITarget('Target Manager Sales Tesst', u9.Id, mngrecordtypeId, quarter);
         insert mngtarget;
         
 
@@ -93,68 +91,44 @@ public class cc_KPITargetDetailHandler_Test {
 
     }
 
-    public testmethod static void testInsertTrigger(){
-        Test.startTest();
-            KPI_Target_Detail__c mngdetail = [SELECT Id, Name, KPI_Target__c, Sale__c,
-                                                Period__c, KPI_Category__c, Quarter__c,
-                                                SpendingKPI__c, PaymentKPI__c 
-                                                FROM KPI_Target_Detail__c WHERE KPITargetType__c = 'Sale_Manager_KPI' LIMIT 1];
-            KPI_Target_Detail__c newmg = new KPI_Target_Detail__c();
 
-            newmg.Name = mngdetail.Name;
-            newmg.KPI_Target__c = mngdetail.KPI_Target__c;
-            newmg.Sale__c = mngdetail.Sale__c;
-            newmg.Period__c = mngdetail.Period__c;
-            newmg.KPI_Category__c = mngdetail.KPI_Category__c;       
-            newmg.Quarter__c = mngdetail.Quarter__c;
-            newmg.SpendingKPI__c = 333; 
-            newmg.PaymentKPI__c = 555;
+    public testMethod static void TestGetKPItargets(){
 
-            insert newmg;
+        KPI_Target__c kpi = [SELECT Id FROM KPI_Target__c  WHERE Name = 'Target Sales Tesst' LIMIT 1];
+        List<KPI_Target_Detail__c> kpitargetdetails = new List<KPI_Target_Detail__c>();
 
-            KPI_Target_Detail__c saledetail = [SELECT Id, Name, KPI_Target__c, Sale__c,
-                                                Period__c, KPI_Category__c, Quarter__c,
-                                                SpendingKPI__c, PaymentKPI__c  
-                                                FROM KPI_Target_Detail__c WHERE KPITargetType__c = 'Sale_KPI' LIMIT 1];
-            
-            KPI_Target_Detail__c newsale = new KPI_Target_Detail__c();
-            newsale.Name = saledetail.Name;
-            newsale.KPI_Target__c = saledetail.KPI_Target__c;
-            newsale.Sale__c = saledetail.Sale__c;
-            newsale.Period__c = saledetail.Period__c;
-            newsale.KPI_Category__c = saledetail.KPI_Category__c;       
-            newsale.Quarter__c = saledetail.Quarter__c;
-            newsale.SpendingKPI__c = 333; 
-            newsale.PaymentKPI__c = 555;
 
-            insert newsale;
+        kpitargetdetails = cc_ManualSyncKPITargetController.getKPItargetDetails(kpi.Id);
 
-        try {
-            Test.stopTest();
-        } catch (Exception ex) {
-            
-        }
+
+        KPI_Target__c kpi1 = [SELECT Id FROM KPI_Target__c  WHERE Name = 'Target Manager Sales Tesst' LIMIT 1];
+        List<KPI_Target_Detail__c> kpitargetdetails1 = new List<KPI_Target_Detail__c>();
+
+        kpitargetdetails1 = cc_ManualSyncKPITargetController.getKPItargetDetails(kpi1.Id);
+
     }
 
-    public testmethod static void testupdateTrigger(){
-        Test.startTest();
-            KPI_Target_Detail__c mngdetail = [SELECT Id, SpendingKPI__c, PaymentKPI__c FROM KPI_Target_Detail__c WHERE KPITargetType__c = 'Sale_Manager_KPI' LIMIT 1];
-            mngdetail.SpendingKPI__c = 333; 
-            mngdetail.PaymentKPI__c = 555;
 
-            update mngdetail;
+    public testMethod static void TestSyncSaleKPItargets(){
 
-            KPI_Target_Detail__c saledetail = [SELECT Id, SpendingKPI__c, PaymentKPI__c FROM KPI_Target_Detail__c WHERE KPITargetType__c = 'Sale_KPI' LIMIT 1];
-            saledetail.SpendingKPI__c = 222; 
-            saledetail.PaymentKPI__c = 444;
+        KPI_Target__c salekpi = [SELECT Id FROM KPI_Target__c WHERE Name = 'Target Sales Tesst' LIMIT 1 ];
+        List<KPI_Target_Detail__c> kpitargetdetails = new List<KPI_Target_Detail__c>();
+        kpitargetdetails = [SELECT Id FROM KPI_Target_Detail__c WHERE KPI_Target__c= :salekpi.Id ];
 
-            update saledetail;
+        System.debug('kpitargetdetails=>' + kpitargetdetails.size());
+        Boolean rs = cc_ManualSyncKPITargetController.syncKpiTarget(kpitargetdetails, salekpi.Id);
+        
+    }
 
-        try {
-            Test.stopTest();
-        } catch (Exception ex) {
-            
-        }
 
+    public testMethod static void TestSyncSaleManagerKPItargets(){
+
+        KPI_Target__c salekpi = [SELECT Id FROM KPI_Target__c WHERE Name = 'Target Manager Sales Tesst' LIMIT 1 ];
+        List<KPI_Target_Detail__c> kpitargetdetails = new List<KPI_Target_Detail__c>();
+        kpitargetdetails = [SELECT Id FROM KPI_Target_Detail__c WHERE KPI_Target__c= :salekpi.Id ];
+
+        System.debug('kpitargetdetails=>' + kpitargetdetails.size());
+        Boolean rs = cc_ManualSyncKPITargetController.syncKpiTarget(kpitargetdetails, salekpi.Id);
+        
     }
 }

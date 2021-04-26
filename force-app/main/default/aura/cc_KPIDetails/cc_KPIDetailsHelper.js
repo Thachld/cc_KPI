@@ -8,10 +8,17 @@
         action.setCallback(this, function(response){
             var state = response.getState();
             if (state === "SUCCESS"){
+                
                 var result = response.getReturnValue();	
-                if(result.length >0){
+                if(result.length > 0){
                     for(let i = 0 ; i< result.length; i ++){
                         result[i].isnew = false;
+
+                        if(result[i].KPITargetType__c === 'Sale_Manager_KPI'){
+                            result[i].disabled = true;
+                        }else{
+                            result[i].disabled = false;                            
+                        }
                     }
                 }else{
                     var newRecord = component.get("v.newRecord");

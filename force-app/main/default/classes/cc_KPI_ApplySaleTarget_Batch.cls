@@ -21,6 +21,7 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){
         Set<String> saleIds= new Set<String>();
+        List<KPI_Target_Detail__c> updateKPItargetdt = new List<KPI_Target_Detail__c>();
         Map<String,List<KPI_Target_Detail__c>> mapTargets = new Map<String,List<KPI_Target_Detail__c>>();
         Map<String,List<KPI_Target_Detail__c>> mapMngTargets = new Map<String,List<KPI_Target_Detail__c>>();
         List<Sale_Spending_Payment__c> listSaleKPIsToUpdate = new List<Sale_Spending_Payment__c>();
@@ -35,7 +36,8 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
                                                 FROM KPI_Target_Detail__c 
                                                 WHERE Sale__c IN :saleIds 
                                                 AND Period__c = :this.kpiPeriod
-                                                AND KPI_Target__r.Approval_Status__c = 'Approved']){
+                                                AND IsEdit__c = True
+                                                AND KPI_Target__r.Status__c = 'Approved']){
                 if(target.KPITargetType__c == 'Sale_KPI'){    
                     if(target.KPI_Target__r.Include_Manager__c){
                         if(mapTargets.containsKey(target.Sale__c)){
@@ -76,6 +78,12 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
                         saleKPI.KPI_Number__c = externalNumber;
                         
                         listSaleKPIsToUpdate.add(saleKPI);
+
+                        KPI_Target_Detail__c dt = new KPI_Target_Detail__c();
+                        dt.Id = target.Id;
+                        dt.LastSyncDateTime__c = System.now();
+
+                        updateKPItargetdt.add(dt);
                     }
                 }
             }else {
@@ -93,6 +101,12 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
                         saleKPI.KPI_Number__c = externalNumber;
                         
                         listSaleKPIsToUpdate.add(saleKPI);
+
+                        KPI_Target_Detail__c dt = new KPI_Target_Detail__c();
+                        dt.Id = target.Id;
+                        dt.LastSyncDateTime__c = System.now();
+
+                        updateKPItargetdt.add(dt);
                     }
                 }
             }    
@@ -110,6 +124,11 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
                     this.lserrors.add(err);                 
                 }
             }
+        }
+
+
+        if(updateKPItargetdt.size() > 0){
+            update updateKPItargetdt;
         }
 
     }

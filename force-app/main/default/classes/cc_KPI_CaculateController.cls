@@ -102,6 +102,7 @@ public with sharing class cc_KPI_CaculateController {
                                             FROM QC_Account_Data__c 
                                             WHERE syn_date__c >=: minDateTime 
                                                 AND syn_date__c <=:  maxDateTime 
+                                                AND QC_Account__r.Type__c != 'Internal'              
                                                 AND Sale__c = :this.MKPI.Sales__c                                         
                                             GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
@@ -181,6 +182,7 @@ public with sharing class cc_KPI_CaculateController {
                                             WHERE Effective_date__c >=: minDateTime 
                                                 AND Effective_date__c <=:  maxDateTime 
                                                 AND Stage__c = 'Done'
+                                                AND QC_Account__r.Type__c != 'Internal'              
                                                 AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
                                                 AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') 
                                                 AND Sale__c = :this.MKPI.Sales__c                                            

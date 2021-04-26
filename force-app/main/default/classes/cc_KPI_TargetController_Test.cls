@@ -1,5 +1,5 @@
 @istest
-public class cc_KPI_ApplySaleTarget_Schedule_Test {
+public class cc_KPI_TargetController_Test {
     @TestSetup
     static void testSetup(){
         List<User> urs = new List<User>();
@@ -12,7 +12,7 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
         Date today = System.today();      
         String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
         String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
+        String period = month +'-' + year ;       
         String quarter = '';
         if( today.month() > = 1 && today.month() <=3 ){
             quarter = '1-' + year;
@@ -22,7 +22,8 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
             quarter = '3-' + year;
         }else{
             quarter = '4-' + year;
-        }
+        } 
+
 
         Profile pf = [SELECT ID FROM Profile WHERE Name = 'Sales Profile'];
         User u1 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false);
@@ -66,12 +67,10 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
         
         String salerecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
         KPI_Target__c target = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, salerecordtypeId, quarter);
-        target.Status__c ='Approved';
         insert target;        
 
         String mngrecordtypeId = Schema.SObjectType.KPI_Target__c.getRecordTypeInfosByDeveloperName().get('Sale_Manager_KPI').getRecordTypeId(); 
         KPI_Target__c mngtarget = cc_initData.initKPITarget('Target Sales Tesst', u9.Id, mngrecordtypeId, quarter);
-        mngtarget.Status__c ='Approved';
         insert mngtarget;
 
         for(User us: urs){            
@@ -97,18 +96,47 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
         }
 
         insert details;
+
     }
 
-    public testmethod static void testSchedule(){
-        Datetime dt = Datetime.now().addMinutes(2);
-        String CRON_EXP = '0 '+ dt.minute() + ' * ' + dt.day() + ' ' + dt.month() + ' ? ' + dt.year();
 
-        
-        String jobId = System.schedule('calKPI', CRON_EXP, new cc_KPI_ApplySaleTarget_Schedule());
+    public testmethod static void testPicklist(){
+        List<cc_KPI_TargetController.PickListWraper> cats = cc_KPI_TargetController.getCategoryPicklistDB();
 
-        CronTrigger ct = [SELECT id, CronExpression, TimesTriggered, NextFireTime from CronTrigger where id = :jobId];
+        System.assert(cats.size() > 0);
+    }
+
+    public testmethod static void testGettargetDetail(){
+        KPI_Target__c target = [SELECT Id FROM KPI_Target__c WHERE Name = 'Target Sales Tesst' LIMIT 1];
+
+        List<KPI_Target_Detail__c> testRS = cc_KPI_TargetController.getKPIDetailsDB(target.Id);
+
+        System.assertEquals(9, testRS.size());
+    }
+
+    public testmethod static void testSavetargetDetail(){
+        KPI_Target__c target = [SELECT Id FROM KPI_Target__c WHERE Name = 'Target Sales Tesst' LIMIT 1];
+
+        List<KPI_Target_Detail__c> testRS = cc_KPI_TargetController.getKPIDetailsDB(target.Id);
+        cc_KPI_TargetController.saveKPITargetdetaislDB(testRS);
+
+        KPI_Target_Detail__c detail = [SELECT Id, Sale__c, Month__c, KPI_Category__c, 
+                                        SpendingKPI__c, PaymentKPI__c, Sale__r.Name , Sale__r.Trac_Name__c, CurrencyIsoCode 
+                                        FROM KPI_Target_Detail__c LIMIT 1];
+
+        detail.SpendingKPI__c = 450;
         
-        System.assertEquals(CRON_EXP, ct.CronExpression); 
-        System.assertEquals(0, ct.TimesTriggered);
+        KPI_Target_Detail__c testDetail = cc_KPI_TargetController.saveKPITargetdetailDB(detail);
+
+        System.assertEquals(450, testDetail.SpendingKPI__c);
+    }
+
+    public testmethod static void testDeletetargetDetail(){
+        KPI_Target_Detail__c detail = [SELECT Id, Sale__c, Month__c, KPI_Category__c, 
+                                        SpendingKPI__c, PaymentKPI__c, Sale__r.Name , Sale__r.Trac_Name__c, CurrencyIsoCode 
+                                        FROM KPI_Target_Detail__c LIMIT 1];        
+        
+        cc_KPI_TargetController.deleteKPITargetdetaiDB(detail.Id);
+
     }
 }

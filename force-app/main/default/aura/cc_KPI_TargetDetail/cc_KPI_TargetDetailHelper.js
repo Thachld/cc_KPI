@@ -97,7 +97,7 @@
 
     //Init Case Sub category piclist
     getIndustryPicklist : function(component, event){
-        var action = component.get("c.getIndustryPicklistDB");            
+        var action = component.get("c.getCategoryPicklistDB");            
 		action.setCallback(this, function(response){
 			var state = response.getState();            
 			if (state === "SUCCESS"){

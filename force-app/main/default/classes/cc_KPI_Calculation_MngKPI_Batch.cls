@@ -1,16 +1,24 @@
 global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObject>, Database.Stateful{
     public String kpiperiod {get;set;}
+    public List<KPI__c> KPIs {get;set;}
+    public cc_KPI_Setting__c kpisetting {get;set;}
 
     public cc_KPI_Calculation_MngKPI_Batch(String period) {
         this.kpiperiod = period;
+        this.KPIs = new List<KPI__c>();
+        this.kpisetting = cc_Util.getKPISetting('ccKPISetting');
     }
 
     global Database.QueryLocator start(Database.BatchableContext bc){
-        return Database.getQueryLocator([SELECT Id, Sales__c, Sales__r.Manager_Level__c, 
+        return Database.getQueryLocator([SELECT Id, Sales__c, Sales__r.LastName, Sales__r.Email, Sales__r.Trac_Name__c,
+                                                Sales__r.Manager_Level__c, 
                                                 Sale_Manager_KPI__c,
                                                 Sale_Manager_KPI__r.Sales__c,
                                                 RecordType.DeveloperName,
                                                 SalesManager__c, 
+                                                Period__c,
+                                                From_Date__c,
+                                                To_Date__c,
                                                 KPI_Category__c,
                                                 Name    
                                         FROM KPI__c 
@@ -28,7 +36,8 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
         Map<String, List<Sale_Spending_Payment__c>> maptoUpdateSps = new Map<String, List<Sale_Spending_Payment__c>>();
 
         for(KPI__c kpi: scope){            
-            kpiIds.add(kpi.Id);            
+            kpiIds.add(kpi.Id);   
+            this.KPIs.add(kpi);        
         }
         System.debug('kpiIds => ' + kpiIds.size());
         for(Sale_Spending_Payment__c sp : [SELECT Id, KPI__c, KPI__r.KPIAutoNumber__c, KPI_Number__c, 
@@ -205,7 +214,6 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
             }
         }
 
-
         
         if(maptoUpdateSps.size() > 0){
             for(String kpiId: maptoUpdateSps.keyset()){
@@ -222,6 +230,59 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
     }
 
     global void finish(Database.BatchableContext bc){
+        if(this.kpisetting != null){
+            if(this.kpisetting.SendEmailToManager__c){
+                Messaging.Email[] messages = new Messaging.Email[0];
+                for(KPI__c kpi : this.KPIs){
+                    Messaging.SingleEmailMessage email = sendEmail(kpi);
+                    messages.add(email);            
+                }
+                try {
+                    Messaging.sendEmail(messages);
+                } catch (Exception ex) {
+                    
+                }    
+            }
+        }
+    }
 
+
+    public Messaging.SingleEmailMessage sendEmail(KPI__c kpi ){
+        Datetime dtNow = System.now();
+        String dtNowformat = dtNow.formatGMT('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
+        
+        List<String> emails = new List<String>();  
+        
+        if(kpi.Sales__c == this.kpisetting.Sales_Director__c){
+            User pa = [SELECT Id, Email FROM User WHERE Id = : this.kpisetting.Sales_Director_PA__c];
+            if(pa != null){
+                emails.add(pa.Email);        
+            }else{
+                emails.add(kpi.Sales__r.Email);        
+            }
+        }else {
+            emails.add(kpi.Sales__r.Email);        
+        }
+
+
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();           
+        mail.setSaveAsActivity(false);   
+        mail.setSenderDisplayName('Cốc Cốc Salesforce System'); 
+
+        mail.setSubject('[KPI] - Manager KPI Result - '+  kpi.Name);
+        mail.setHtmlBody(              
+                  '<br/><br/><b>Dear Manager ' + kpi.Sales__r.LastName + '</b>'
+				+ '<br/><br/>  Your Manager\' KPI result has been completed to calulation ' 
+                + '<br/>KPI Period:' + kpi.Period__c
+                + '<br/>From Date:' + kpi.From_Date__c
+                + '<br/>End Date:' + kpi.To_Date__c               
+                + '<br/>Link: ' + URL.getSalesforceBaseUrl().toExternalForm() + '/' + kpi.Id
+
+                + '<br/><br/>Thank you!'                
+                );
+
+        mail.setToAddresses(emails);
+
+        return mail;
     }
 }

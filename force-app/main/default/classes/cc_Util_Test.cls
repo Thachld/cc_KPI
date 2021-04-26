@@ -13,6 +13,8 @@ public class cc_Util_Test {
 
         cc_Profile__c testPf = cc_Util.getProfile('Sales Profile');
 
+        QC_Integration__c qcinte = cc_initData.initQcIntegrationSetting();
+        insert qcinte;
 
         Date fromdt = Date.newInstance(2020, 1, 1);
         String clause1 = '';
@@ -29,12 +31,23 @@ public class cc_Util_Test {
                                                                         pFieldAccum, pFieldAccumAlias,pObjectAccum, pAgregateField, pAggregateFunc, BatchSize);
         insert params;
 
+        cc_KPI_Setting__c kpisetting = cc_initData.initKPISetting('ccKPISetting');
+        insert kpisetting;
+
         cc_Batch_Parameter__c testparams = cc_Util.getBatchParameter('AccountPaymentAccum');
+
+
+        QC_Integration__c testqcinte = cc_Util.getQCIntergrationInfo('qccampaign');
+
+        cc_KPI_Setting__c kpist = cc_Util.getKPISetting('ccKPISetting');
 
         System.assert(testparams != null);
         System.assert(testPf != null);
-        System.assertEquals(true, bl);
+        System.assert(testqcinte != null);
+        System.assert(kpist != null);
 
+        System.assertEquals(true, bl);
+      
 
     }
     @isTest

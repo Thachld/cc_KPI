@@ -382,7 +382,13 @@ public class cc_KPI_CaculateController_Test {
     }
 
     public testmethod static void GlobalAgencyTest(){
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = 'User7-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User7-' + period;
+
+        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
         ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
         cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
@@ -390,7 +396,13 @@ public class cc_KPI_CaculateController_Test {
     }   
 
     public testmethod static void MessageTest(){
-        KPI__c kpi = [SELECT Id, Status__c, To_Date__c, From_Date__c, Sales__c FROM KPI__c WHERE Name = 'User6-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User6-' + period;
+
+        KPI__c kpi = [SELECT Id, Status__c, To_Date__c, From_Date__c, Sales__c FROM KPI__c WHERE Name = :name LIMIT 1];
         kpi.Status__c = 'Confirmed';
         update kpi;
 
@@ -412,7 +424,13 @@ public class cc_KPI_CaculateController_Test {
 
 
     public testmethod static void IndustryTest(){
-        KPI__c kpi1 = [SELECT Id FROM KPI__c WHERE Name = 'User1-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User1-' + period;
+
+        KPI__c kpi1 = [SELECT Id FROM KPI__c WHERE Name =  :name LIMIT 1];
 
         ApexPages.StandardController sc1 = new ApexPages.StandardController(kpi1);
         cc_KPI_CaculateController kpictrol1 = new cc_KPI_CaculateController(sc1);
@@ -420,13 +438,20 @@ public class cc_KPI_CaculateController_Test {
     }
 
     public testmethod static void IndustrySpecialTest(){
-        KPI__c kpi0 = [SELECT Id FROM KPI__c WHERE Name = 'User2-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User2-' + period;
+
+        KPI__c kpi0 = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
         ApexPages.StandardController sc0 = new ApexPages.StandardController(kpi0);
         cc_KPI_CaculateController kpictrol0 = new cc_KPI_CaculateController(sc0);
         kpictrol0.calculateKPI();
 
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = 'User3-12-2020' LIMIT 1];
+        String name2 = 'User3-' + period;
+        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name2 LIMIT 1];
 
         ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
         cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
@@ -434,7 +459,13 @@ public class cc_KPI_CaculateController_Test {
     }
 
     public testmethod static void LocalAgencyTest(){
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = 'User4-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User4-' + period;
+
+        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
         ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
         cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
@@ -442,7 +473,13 @@ public class cc_KPI_CaculateController_Test {
     }
     
     public testmethod static void LocalAgencySpecialTest(){
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = 'User5-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User5-' + period;
+
+        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
         ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
         cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
@@ -451,7 +488,13 @@ public class cc_KPI_CaculateController_Test {
 
     
     public testmethod static void LocalAgencyHCMTest(){
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = 'User8-12-2020' LIMIT 1];
+        Date today = System.today();      
+        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+        String year = String.valueOf(today.year());
+        String period = month +'-' + year ;
+        String name = 'User8-' + period;
+
+        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
         ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
         cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);

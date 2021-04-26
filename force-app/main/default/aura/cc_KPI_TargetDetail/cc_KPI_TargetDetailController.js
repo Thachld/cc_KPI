@@ -8,13 +8,16 @@
         }
     },
 
-    handleChangeData :function(component,event,helper){                     
+    handleChangeData :function(component,event,helper){   
+                          
         var editmode = component.get("v.editMode");
         if(editmode){
-            var valid = helper.checkValidity(component,event);
-
+            // var valid = helper.checkValidity(component,event);
+            var valid = true;
             if(valid){
                 component.set("v.editMode", false);  
+                component.set("v.editSpending", false);  
+                component.set("v.editPayment", false);  
                 
                 var event = component.getEvent("KPITargetEvent");
                 event.setParams({
@@ -26,24 +29,35 @@
                 helper.saveKPITargetDetail(component);
             }
         }else{
-            component.set("v.editMode", "true"); 
-            
+
+            var detail = component.get("v.detail");
+            if(detail.IsEdit__c === true){            
+                if(detail.Sale__r.Sale_Team__c === 'Direct'){
+                    component.set("v.editMode", "true"); 
+                    component.set("v.editSpending", "true"); 
+
+                }else if(detail.Sale__r.Sale_Team__c === 'Global Agency'){
+                    component.set("v.editMode", "true"); 
+                    component.set("v.editPayment", "true"); 
+                }
+            }else{
+                var toastEvent = $A.get("e.force:showToast");
+                toastEvent.setParams({
+                    "title": "Warning!",
+                    "type":"warning",
+                    "mode": "sticky",
+                    "message": "You unable to change this sale target, this is manager's target of " + detail.Sale__r.Trac_Name__c + " ."
+                });
+                toastEvent.fire();
+            }
+
+
             var event = component.getEvent("KPITargetEvent");
                 event.setParams({
                     'eventType':'editChange'
                 });
                 event.fire();
         }
-    },
-      
-    handleAddKPIDetail :function(component,event,helper){    
-            
-        var event = component.getEvent("KPITargetEvent");
-        event.setParams({
-            'eventType':'Add'
-        });
-        
-        event.fire();
     },
 
 

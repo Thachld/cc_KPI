@@ -52,7 +52,10 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
     public testmethod static void testKPITeammember(){        
 
         Test.startTest();
-            String period = '12-2020';
+            Date today = System.today();      
+            String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
+            String year = String.valueOf(today.year());
+            String period = month +'-' + year ;
             cc_KPI_ManagerKPITeamMember_Batch batch = new cc_KPI_ManagerKPITeamMember_Batch(period);
             Database.executeBatch(batch);
 
@@ -75,7 +78,7 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
             String CRON_EXP = '0 '+ dt.minute() + ' * ' + dt.day() + ' ' + dt.month() + ' ? ' + dt.year();
 
             
-            String jobId = System.schedule('ManagerKPITeamMember', CRON_EXP, new cc_KPI_ManagerKPITeamMember_Schedule());
+            String jobId = System.schedule('ManagerKPITeamMember_Test', CRON_EXP, new cc_KPI_ManagerKPITeamMember_Schedule());
 
             CronTrigger ct = [SELECT id, CronExpression, TimesTriggered, NextFireTime from CronTrigger where id = :jobId];
             

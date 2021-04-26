@@ -80,6 +80,7 @@ public class cc_initData {
         ctr.Contract_End_Date__c = endDate;
         ctr.DiscountBonus_as_Policy__c = false;
         ctr.Special_discount__c = 20;
+        ctr.Discount_By__c = 'Special Discount/Bonus';
         ctr.Type__c = 'Master - Commitment';
         
         ctr.Commitment_Value__c = 100;
@@ -95,6 +96,7 @@ public class cc_initData {
         ctr.Contract_Start_Date__c = startDate;        
         ctr.DiscountBonus_as_Policy__c = false;
         ctr.Discount_By__c = 'Special Discount';
+        ctr.Discount_By__c = 'Special Discount/Bonus';
         ctr.Special_discount__c = 20;
         ctr.Type__c = type;
         ctr.Active__c = true;
@@ -395,6 +397,27 @@ public class cc_initData {
         return prf;
     }
 
+    public static QC_Integration__c initQcIntegrationSetting(){
+        QC_Integration__c integration = new QC_Integration__c();
+        integration.Name = 'qccampaign';
+        integration.apiuri__c = 'https://api.qc.coccoc.com/v1/campaigns/statistics?';
+        integration.Token__c = '76edd9abc011ec84f5a9782b5a040edba3bdb255';
+        integration.method__c = 'GET';
+
+        return integration;
+    }
+
+    public static cc_KPI_Setting__c initKPISetting(String name){
+        cc_KPI_Setting__c kpi = new cc_KPI_Setting__c();
+        kpi.Name = name;
+        kpi.SendEmailToManager__c = true;
+        kpi.SendEmailToSale__c = true;   
+        kpi.Sales_Director__c = '0050o00000Xn1UNAAZ';
+        kpi.Sales_Director_PA__c = '0050o00000Xn3cmAAB';       
+
+        return kpi;
+    }
+
     public static KPI__c initKPI(String name, String saleId, String period, Date startdt, Date enddt, String KPIcat){
         KPI__c kpi = new KPI__c();
         kpi.Name =name;
@@ -479,6 +502,21 @@ public class cc_initData {
         return detail;
     }
 
+    public static TransferSpendingCash__c initTransferSpendingCash (String name, String saleId , String tosaleId, Date from_dt, Date to_dt, String type, string qcAccId ){
+        TransferSpendingCash__c rq = new TransferSpendingCash__c();
+        rq.Name = name;
+        rq.From_Sale__c = saleId;
+        rq.To_Sale__c = tosaleId;
+        rq.From_date__c = from_dt;
+        rq.To_date__c = to_dt;        
+        rq.Transfer_Type__c = type;
+        rq.QC_Account__c = qcAccId;
+        rq.Status__c = 'New';
+        rq.Approval_Status__c = 'Approved';
+
+        return rq;
+    }
+    
     public static QC_Account_Data__c initQCAccountData(String qcId, String accId, Datetime syndate, Decimal val,Integer qty,String type){
         QC_Account_Data__c data = new QC_Account_Data__c();
 

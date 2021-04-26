@@ -4,7 +4,8 @@ public class cc_KPI_Calculation_Schedule_Test {
     static void testSetup(){
         cc_setting__c ccSetting = cc_initData.initCustomeSetting();
         insert ccSetting;  
-        
+        cc_KPI_Setting__c kpisetting = cc_initData.initKPISetting('ccKPISetting');
+        insert kpisetting;
         
         List<Account> listAcc = new List<Account>();
         List<QC_Account__c> listQCAcc = new List<QC_Account__c>();       

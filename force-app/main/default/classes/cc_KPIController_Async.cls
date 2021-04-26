@@ -2,12 +2,19 @@ global class cc_KPIController_Async {
 
     public static void attempgenerateSaleKPI(Set<String> kpis){
         if(!System.isFuture() && !System.isBatch()){
-            generateSaleKPICategory(kpis);
+            attemptAsyncGenSaleKPICategory(kpis);
+        }else {
+            attemptSyncGenSaleKPICategory(kpis);
         }
     }
+
+    @future    
+    public static void attemptAsyncGenSaleKPICategory(Set<String> kpis){
+        attemptSyncGenSaleKPICategory(kpis);
+    }
     
-    @future
-    global static void generateSaleKPICategory(Set<String> kpis){       
+    
+    public static void attemptSyncGenSaleKPICategory(Set<String> kpis){       
         Map<String,KPI__c> mapkpi = new Map<String,KPI__c>();
         Map<String,List<Sale_Spending_Payment__c>> mapSSP = new Map<String,List<Sale_Spending_Payment__c>>();
         List<Sale_Spending_Payment__c> listtoInsert = new List<Sale_Spending_Payment__c>();

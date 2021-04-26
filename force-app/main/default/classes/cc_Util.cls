@@ -3,7 +3,7 @@ public class cc_Util {
         cc_setting__c setting = [select id, Feedback_default_assignee__c, Hotline__c,is_write_api_log__c, payment_assignee__c,
                                 push_topic__c,Qc_account_email__c,run_bachth__c,Ads_Local__c,Consultant_to_Agency_Business__c,Deputy_Head_of_Agency__c,
                                  Global_Ads_Leader__c, Xaxis_Name__c, Fixing_Payment_and_Spending__c, Notify_missing_in_QC_Account__c,
-                                 Hom_assign__c
+                                 Hom_assign__c, Weekend__c
                                 from cc_setting__c limit 1];
         return setting;
     }
@@ -30,6 +30,40 @@ public class cc_Util {
         }
     }
 
+    public static QC_Integration__c getQCIntergrationInfo(String customSetting) {        
+        try {
+            QC_Integration__c params = new QC_Integration__c();
+            params = QC_Integration__c.getInstance(customSetting);
+            return params;
+        }
+        catch (Exception e) {            
+            return null;
+        }
+    }
+
+    public static cc_Payment_Setting__c getPaymentSetting(String customSetting) {        
+        try {
+            cc_Payment_Setting__c params = new cc_Payment_Setting__c();
+            params = cc_Payment_Setting__c.getInstance(customSetting);
+            return params;
+        }
+        catch (Exception e) {            
+            return null;
+        }
+    }
+
+    public static cc_KPI_Setting__c getKPISetting(String customSetting) {        
+        try {
+            cc_KPI_Setting__c params = new cc_KPI_Setting__c();
+            params = cc_KPI_Setting__c.getInstance(customSetting);
+            return params;
+        }
+        catch (Exception e) {            
+            return null;
+        }
+    }
+
+
     public static void writeLog(string name, string description, string inputData){
         Error_log__c error = new Error_log__c();
         error.name = name;
@@ -37,6 +71,7 @@ public class cc_Util {
         insert error;
         
     }
+    
     public static AccountShare initSharing(string accountId, string userId){
         AccountShare sharing = new AccountShare();
         sharing.AccountAccessLevel = 'Read';
