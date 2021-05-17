@@ -16,6 +16,7 @@ global class cc_KPI_ApplySaleTarget_Batch implements Database.Batchable<sObject>
                                         FROM KPI__c 
                                         WHERE Period__c = :this.kpiPeriod
                                             AND Sales__c != ''
+                                            AND RecordType.DeveloperName IN ('Sale_KPI','Sale_Manager_KPI','Support_Manager_KPI')
                                             AND Status__c != 'Confirmed']);       
     }
 

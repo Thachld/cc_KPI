@@ -1,17 +1,18 @@
-global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Database.Stateful{
-    public String kpiPeriod {get;set;}
-    public Datetime minDateTime {get;set;}
-    public Datetime maxDateTime {get;set;}
-    public Date minDate {get;set;}
-    public Date maxDate {get;set;}    
-    public List<Sale_Spending_Payment__c> listUpSertSP;   
-    public List<KPI__c> KPIs {get;set;}
-    public List<Sale_Spending_Payment__c> listDeleteSP; 
-    public Set<String> kpiIds {get;set;}   
-    public List<cc_DMLResult_wrapper> lserrors  {get;set;} 
-    public cc_KPI_Setting__c kpisetting {get;set;}
+global class cc_KPI_Calculation_Support_Batch implements Database.Batchable<sObject>, Database.Stateful{
+    private String kpiPeriod {get;set;}
+    private Datetime minDateTime {get;set;}
+    private Datetime maxDateTime {get;set;}
+    private Date minDate {get;set;}
+    private Date maxDate {get;set;}    
+    private List<Sale_Spending_Payment__c> listUpSertSP;   
+    private List<KPI__c> KPIs {get;set;}
+    private List<Sale_Spending_Payment__c> listDeleteSP; 
+    private Set<String> kpiIds {get;set;}   
+    private List<cc_DMLResult_wrapper> lserrors  {get;set;} 
+    private cc_KPI_Setting__c kpisetting {get;set;}
+    private Boolean includePayment {get;set;}
 
-    public cc_KPI_Calculation_Batch(String period) {
+    public cc_KPI_Calculation_Support_Batch(String period, Boolean pincludePayment) {
         this.kpiIds = new Set<String>();        
         this.lserrors = new  List<cc_DMLResult_wrapper>();
         this.KPIs = new List<KPI__c>();
@@ -19,6 +20,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
         this.listDeleteSP = new List<Sale_Spending_Payment__c>();
         this.kpiPeriod = period;
         this.kpisetting = cc_Util.getKPISetting('ccKPISetting');
+        this.includePayment = pincludePayment ==null?this.kpisetting.IncludePayment__c : pincludePayment;
         
         date dtToday = date.today();
         Date rundate;
@@ -44,7 +46,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                                                 SalesManager__c, From_Date__c, To_Date__c, Period__c,
                                                 KPI_Category__c                                                
                                         FROM KPI__c WHERE Period__c =: kpiPeriod
-                                            AND RecordType.DeveloperName = 'Sale_KPI'
+                                            AND RecordType.DeveloperName = 'Support_KPI'
                                             AND Status__c != 'Confirmed']);
     }
 
@@ -76,7 +78,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
             }                                 
         }
 
-        for(AggregateResult arr  :  [SELECT Sale__c Sale__c, 
+        for(AggregateResult arr  :  [SELECT Support__c Sale__c, 
                                             Xaxis__c Xaxis__c, 
                                             Special_client__c Special_client__c, 
                                             Industry__c Industry__c, 
@@ -88,9 +90,9 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                                         FROM QC_Account_Data__c 
                                         WHERE syn_date__c >=: this.minDateTime 
                                             AND syn_date__c <=:  this.maxDateTime 
-                                            AND Sale__c IN  :mapSale.keySet()    
+                                            AND Support__c IN  :mapSale.keySet()    
                                             AND QC_Account__r.Type__c != 'Internal'                                       
-                                        GROUP BY Sale__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
+                                        GROUP BY Support__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
             cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
             qc.Amount = (Decimal)arr.get('Total_Spending__c');                   
@@ -103,45 +105,14 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
             Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
             String KPICat;
 
-            if(Strategic_Client){
-                KPICat = 'Strategic Team';
-            }else if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                if(Agency.trim() == 'Local Agency'){
-                    if(Is_HN_Region){
-                        KPICat = Agency.trim() + ' HN';
-                    }else{
-                        KPICat = Agency.trim() + ' HCM';
-                    }                    
-
-                    if(Specialclient){
-                        KPICat = KPICat + '-Special Client';
-                    }
-                }else{
-                    if(xaxis){
-                        if(Xaxis_Owner){
-                            KPICat = Agency.trim() + '-Xaxis';
-                        }else {
-                            KPICat = Agency.trim();
-                        }
-                    }else{
-                        if(Xaxis_Owner){
-                            KPICat = Agency.trim() + '-Non Xaxis';
-                        }else {
-                            KPICat = Agency.trim();
-                        }
-                    }
-
-                }                
+            if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
+                KPICat = Agency.trim();                              
             }else if(!String.isBlank(Industry)){
-                if(Specialclient){
-                    KPICat = Industry.trim() + '-Special';
-                }else {
-                    if(Industry == 'Retails' || Industry == 'FMCG'){
-                        KPICat = 'FMCG-Retails';
-                    }else{
-                        KPICat = Industry.trim();
-                    }
-                }
+                if(Industry == 'Retails' || Industry == 'FMCG'){
+                    KPICat = 'FMCG-Retails';
+                }else{
+                    KPICat = Industry.trim();
+                }                
             }else {
                 KPICat = 'Unknown';
             }            
@@ -162,111 +133,83 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
         }
 
 
-        //Payment
-        String accepted_recordtype = this.kpisetting.PaymentRecordType__c;
-        String [] acceptedReccordtypes;
-        if(!String.isBlank(accepted_recordtype)){
-            acceptedReccordtypes = accepted_recordtype.split(',');
-        }
+        if(this.includePayment){
+            //Payment
+            String accepted_recordtype = this.kpisetting.PaymentRecordType__c;
+            String [] acceptedReccordtypes;
+            if(!String.isBlank(accepted_recordtype)){
+                acceptedReccordtypes = accepted_recordtype.split(',');
+            }
 
-        String accepted_paymentMethod = this.kpisetting.Paymentmethod__c;
-        String [] acceptedpaymentmethods;
-        if(!String.isBlank(accepted_paymentMethod)){
-            acceptedpaymentmethods = accepted_paymentMethod.split(',');
-        }
+            String accepted_paymentMethod = this.kpisetting.Paymentmethod__c;
+            String [] acceptedpaymentmethods;
+            if(!String.isBlank(accepted_paymentMethod)){
+                acceptedpaymentmethods = accepted_paymentMethod.split(',');
+            }
 
-        if(acceptedReccordtypes != null && acceptedpaymentmethods !=null){
+            if(acceptedReccordtypes != null && acceptedpaymentmethods !=null){
 
-            for(AggregateResult arr  :  [SELECT Sale__c Sale__c, 
-                                                Xaxis__c Xaxis__c, 
-                                                Special_client__c Special_client__c, 
-                                                Industry__c Industry__c, 
-                                                Agency__c Agency__c,   
-                                                Is_HN_Region__c Is_HN_Region__c, 
-                                                Xaxis_Owner__c Xaxis_Owner__c,      
-                                                Strategic_Client__c Strategic_Client__c,                               
-                                            SUM(Final_Amount__c) Final_Amount__c
-                                            FROM Payment__c 
-                                            WHERE EffectiveDate__c >=: this.minDate 
-                                                AND EffectiveDate__c <=: this.maxDate 
-                                                AND Stage__c = 'Done'
-                                                AND QC_Account__r.Type__c != 'Internal' 
-                                                AND Payment_method__c IN :acceptedpaymentmethods
-                                                AND RecordType.Name IN :acceptedReccordtypes
-                                                AND Sale__c IN  :mapSale.keySet()                                                    
-                                            GROUP BY Sale__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c, Xaxis_Owner__c,Strategic_Client__c]){
+                for(AggregateResult arr  :  [SELECT Support__c Sale__c, 
+                                                    Xaxis__c Xaxis__c, 
+                                                    Special_client__c Special_client__c, 
+                                                    Industry__c Industry__c, 
+                                                    Agency__c Agency__c,   
+                                                    Is_HN_Region__c Is_HN_Region__c, 
+                                                    Xaxis_Owner__c Xaxis_Owner__c,      
+                                                    Strategic_Client__c Strategic_Client__c,                               
+                                                SUM(Final_Amount__c) Final_Amount__c
+                                                FROM Payment__c 
+                                                WHERE EffectiveDate__c >=: this.minDate 
+                                                    AND EffectiveDate__c <=: this.maxDate 
+                                                    AND Stage__c = 'Done'
+                                                    AND QC_Account__r.Type__c != 'Internal' 
+                                                    AND Payment_method__c IN :acceptedpaymentmethods
+                                                    AND RecordType.Name IN :acceptedReccordtypes
+                                                    AND Support__c IN  :mapSale.keySet()                                                    
+                                                GROUP BY Support__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c, Xaxis_Owner__c,Strategic_Client__c]){
 
-                cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
-                qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
-                String Industry = (String)arr.get('Industry__c');  
-                Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
-                Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
-                String Agency = (String)arr.get('Agency__c');
-                Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');            
-                Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
-                Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
+                    cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
+                    qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
+                    String Industry = (String)arr.get('Industry__c');  
+                    Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
+                    Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
+                    String Agency = (String)arr.get('Agency__c');
+                    Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');            
+                    Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
+                    Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
 
-                String KPICat;
-                if(Strategic_Client){
-                    KPICat = 'Strategic Team';
-                }else if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                    if(Agency.trim() == 'Local Agency'){
-                        
-                        if(Is_HN_Region){
-                            KPICat = Agency.trim() + ' HN';
-                        }else{
-                            KPICat = Agency.trim() + ' HCM';
-                        }
-
-                        if(Specialclient){
-                            KPICat = KPICat + '-Special Client';
-                        }
-                    }else{
-                        if(xaxis){
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }else{
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Non Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }
-                    }                
-                }else if(!String.isBlank(Industry)){
-                    if(Specialclient){
-                        KPICat = Industry.trim() + '-Special';
-                    }else {
+                    String KPICat;
+                    if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
+                        KPICat = Agency.trim();                                      
+                    }else if(!String.isBlank(Industry)){
                         if(Industry == 'Retails' || Industry == 'FMCG'){
                             KPICat = 'FMCG-Retails';
                         }else{
                             KPICat = Industry.trim();
-                        }
-                        
-                    }
-                }else {
-                    KPICat = 'Unknown';
-                }             
+                        }                
+                    }else {
+                        KPICat = 'Unknown';
+                    }                  
 
-                qc.Industry =  Industry;
-                qc.KPICategory = KPICat;
-                qc.SpecialClient = Specialclient;
-                qc.Xaxis = xaxis;   
-                qc.Agency = Agency;
-                qc.exists = false;
+                    qc.Industry =  Industry;
+                    qc.KPICategory = KPICat;
+                    qc.SpecialClient = Specialclient;
+                    qc.Xaxis = xaxis;   
+                    qc.Agency = Agency;
+                    qc.exists = false;
 
-                String sale = (String) arr.get('Sale__c');
-                if(mapPayment.containsKey(sale) ){
-                    mapPayment.get(sale).add(qc);
-                }else{
-                    mapPayment.put(sale, new List<cc_QCData_wraper> {qc}); 
-                }            
-            }
-        }    
-
+                    String sale = (String) arr.get('Sale__c');
+                    if(mapPayment.containsKey(sale) ){
+                        mapPayment.get(sale).add(qc);
+                    }else{
+                        mapPayment.put(sale, new List<cc_QCData_wraper> {qc}); 
+                    }            
+                }
+            }    
+        }
+        
+        
+        //Calculation
         for(KPI__c kpi : scope){
 
             List<cc_QCData_wraper> alls = new List<cc_QCData_wraper>();
@@ -332,10 +275,10 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                 }
             }
 
-            if(this.kpiIds.size() >0){
-                Boolean isGeneratefile = true;
-                cc_KPI_CalculationActivities_Batch activitiesbatch = new cc_KPI_CalculationActivities_Batch(this.kpiPeriod , isGeneratefile);
-                Database.executeBatch(activitiesbatch, 40);               
+            if(this.kpiIds.size() >0){             
+                Set<String> kpis = new Set<String>();
+                cc_KPI_GendetailFile_Support_batch generatefile = new cc_KPI_GendetailFile_Support_batch(this.kpiPeriod,kpis,this.includePayment);
+                Database.executeBatch(generatefile, 20);               
             }
 
             if(this.lserrors.size() > 0){

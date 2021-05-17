@@ -4,6 +4,10 @@ public class cc_KPI_ManagerKPITeamMember_Sch_Test {
     static void testSetup(){
         cc_setting__c ccSetting = cc_initData.initCustomeSetting();
         insert ccSetting;         
+
+        cc_KPI_Setting__c kpisetting = cc_initData.initKPISetting('ccKPISetting');
+        insert kpisetting;
+
         Date today = System.today();      
         String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
         String year = String.valueOf(today.year());

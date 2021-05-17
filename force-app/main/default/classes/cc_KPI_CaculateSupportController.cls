@@ -1,16 +1,18 @@
-public with sharing class cc_KPI_CaculateController {
+public with sharing class cc_KPI_CaculateSupportController {
     public KPI__c MKPI {get;set;}
     public String kpiId {get;set;}
     public List<Daily_KPI__c> dailyKPIs {get;set;}
     public Map<String, List<cc_kpimetrics_wraper>> mapMetrics{get;set;}
     public boolean refreshPage {get;set;}
+    private cc_KPI_Setting__c kpisetting {get;set;}
 
-    public cc_KPI_CaculateController(ApexPages.StandardController stdController) {
+    public cc_KPI_CaculateSupportController(ApexPages.StandardController stdController) {
         this.kpiId = (String)stdController.getId();
         getKPI();
         this.dailyKPIs = new List<Daily_KPI__c>();
         this.mapMetrics = new Map<String, List<cc_kpimetrics_wraper>>();
         this.refreshPage = false;
+        this.kpisetting = cc_Util.getKPISetting('ccKPISetting');
     }
 
     public Pagereference calculateKPI(){
@@ -25,7 +27,7 @@ public with sharing class cc_KPI_CaculateController {
         }
 
         if(String.isBlank(this.MKPI.Sales__c)){
-            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Sales field cannot be blank'));
+            ApexPages.addmessage(new ApexPages.message(ApexPages.severity.ERROR,'Sale/Support field cannot be blank'));
             return null;
         }
 
@@ -68,15 +70,9 @@ public with sharing class cc_KPI_CaculateController {
         }
 
         Set<String> pkpiIds = new Set<String>();
-        pkpiIds.add(this.kpiId);   
-        if(Test.isRunningTest()){
-            cc_KPI_GeneratedetailFile_batch generatefile = new cc_KPI_GeneratedetailFile_batch(this.MKPI.Period__c, pkpiIds);
-            Database.executeBatch(generatefile);      
-        }else{
-            cc_KPI_GeneratedetailFile_batch generatefile = new cc_KPI_GeneratedetailFile_batch(this.MKPI.Period__c, pkpiIds);
-            Database.executeBatch(generatefile, 20);      
-        }     
-        
+        pkpiIds.add(this.kpiId);        
+        cc_KPI_GendetailFile_Support_batch generatefile = new cc_KPI_GendetailFile_Support_batch(this.MKPI.Period__c, pkpiIds, this.kpisetting.IncludePayment__c);
+        Database.executeBatch(generatefile, 1);      
     }
 
     public void deleteDailyKPIs(){
@@ -112,7 +108,7 @@ public with sharing class cc_KPI_CaculateController {
                                             WHERE syn_date__c >=: minDateTime 
                                                 AND syn_date__c <=:  maxDateTime 
                                                 AND QC_Account__r.Type__c != 'Internal'              
-                                                AND Sale__c = :this.MKPI.Sales__c                                         
+                                                AND Support__c = :this.MKPI.Sales__c                                         
                                             GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
                 cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
@@ -124,46 +120,20 @@ public with sharing class cc_KPI_CaculateController {
                 Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');      
                 Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
                 Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
+
                 String KPICat;
-
-                if(Strategic_Client){
-                    KPICat = 'Strategic Team';
-                }else if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                    if(Agency.trim() == 'Local Agency'){
-                        if(Is_HN_Region){
-                            KPICat = Agency.trim() + ' HN';
-                        }else{
-                            KPICat = Agency.trim() + ' HCM';
-                        }                    
-
-                        if(Specialclient){
-                            KPICat = KPICat + '-Special Client';
-                        }
-                    }else{
-                        if(xaxis){
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }else{
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Non Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }
-
-                    }                
+                if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
+                    KPICat = Agency.trim();
+                                  
                 }else if(!String.isBlank(Industry)){
-                    if(Specialclient){
-                        KPICat = Industry.trim() + '-Special';
-                    }else {
+                    if(Industry == 'Retails' || Industry == 'FMCG'){
+                        KPICat = 'FMCG-Retails';
+                    }else{
                         KPICat = Industry.trim();
-                    }
+                    }                
                 }else {
                     KPICat = 'Unknown';
-                }            
+                }                      
 
                 qc.Industry =  Industry;
                 qc.KPICategory = KPICat;
@@ -179,89 +149,71 @@ public with sharing class cc_KPI_CaculateController {
             System.debug('spendings =>' + spendings);
 
 
-            for(AggregateResult arr  :  [SELECT Industry__c Industry__c,
-                                                Xaxis__c Xaxis__c, 
-                                                Special_client__c Special_client__c,                                                 
-                                                Agency__c Agency__c, 
-                                                Is_HN_Region__c Is_HN_Region__c,
-                                                Xaxis_Owner__c Xaxis_Owner__c, 
-                                                Strategic_Client__c Strategic_Client__c,                                                    
-                                            SUM(Final_Amount__c) Final_Amount__c
-                                            FROM Payment__c 
-                                            WHERE Effective_date__c >=: minDateTime 
-                                                AND Effective_date__c <=:  maxDateTime 
-                                                AND Stage__c = 'Done'
-                                                AND QC_Account__r.Type__c != 'Internal'              
-                                                AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
-                                                AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') 
-                                                AND Sale__c = :this.MKPI.Sales__c                                            
-                                            GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
+            //payment
+            if(this.kpisetting.IncludePayment__c){
+                String accepted_recordtype = this.kpisetting.PaymentRecordType__c;
+                String [] acceptedReccordtypes;
+                if(!String.isBlank(accepted_recordtype)){
+                    acceptedReccordtypes = accepted_recordtype.split(',');
+                }
 
-                cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
-                qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
-                String Industry = (String)arr.get('Industry__c');  
-                Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
-                Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
-                String Agency = (String)arr.get('Agency__c');
-                Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');            
-                Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
-                Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
+                String accepted_paymentMethod = this.kpisetting.Paymentmethod__c;
+                String [] acceptedpaymentmethods;
+                if(!String.isBlank(accepted_paymentMethod)){
+                    acceptedpaymentmethods = accepted_paymentMethod.split(',');
+                }
+                for(AggregateResult arr  :  [SELECT Industry__c Industry__c,
+                                                    Xaxis__c Xaxis__c, 
+                                                    Special_client__c Special_client__c,                                                 
+                                                    Agency__c Agency__c, 
+                                                    Is_HN_Region__c Is_HN_Region__c,
+                                                    Xaxis_Owner__c Xaxis_Owner__c, 
+                                                    Strategic_Client__c Strategic_Client__c,                                                    
+                                                SUM(Final_Amount__c) Final_Amount__c
+                                                FROM Payment__c 
+                                                WHERE Effective_date__c >=: minDateTime 
+                                                    AND Effective_date__c <=:  maxDateTime 
+                                                    AND Stage__c = 'Done'
+                                                    AND QC_Account__r.Type__c != 'Internal'              
+                                                    AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
+                                                    AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') 
+                                                    AND Support__c = :this.MKPI.Sales__c                                            
+                                                GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
-                String KPICat;
-                if(Strategic_Client){
-                    KPICat = 'Strategic Team';
-                }else if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                    if(Agency.trim() == 'Local Agency'){
-                        
-                        if(Is_HN_Region){
-                            KPICat = Agency.trim() + ' HN';
-                        }else{
-                            KPICat = Agency.trim() + ' HCM';
-                        }
+                    cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
+                    qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
+                    String Industry = (String)arr.get('Industry__c');  
+                    Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
+                    Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
+                    String Agency = (String)arr.get('Agency__c');
+                    Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');            
+                    Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
+                    Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
 
-                        if(Specialclient){
-                            KPICat = KPICat + '-Special Client';
-                        }
-                    }else{
-                        if(xaxis){
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }else{
-                            if(Xaxis_Owner){
-                                KPICat = Agency.trim() + '-Non Xaxis';
-                            }else {
-                                KPICat = Agency.trim();
-                            }
-                        }
-                    }                
-                }else if(!String.isBlank(Industry)){
-                    if(Specialclient){
-                        KPICat = Industry.trim() + '-Special';
-                    }else {
+                    String KPICat;
+                    if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
+                        KPICat = Agency.trim();
+                                    
+                    }else if(!String.isBlank(Industry)){
                         if(Industry == 'Retails' || Industry == 'FMCG'){
                             KPICat = 'FMCG-Retails';
                         }else{
                             KPICat = Industry.trim();
-                        }
-                        
-                    }
-                }else {
-                    KPICat = 'Unknown';
-                }             
+                        }                
+                    }else {
+                        KPICat = 'Unknown';
+                    }                   
 
-                qc.Industry =  Industry;
-                qc.KPICategory = KPICat;
-                qc.SpecialClient = Specialclient;
-                qc.Xaxis = xaxis;   
-                qc.Agency = Agency;
-                qc.exists = false;
-            
-                payments.add(qc);           
-            }
-
+                    qc.Industry =  Industry;
+                    qc.KPICategory = KPICat;
+                    qc.SpecialClient = Specialclient;
+                    qc.Xaxis = xaxis;   
+                    qc.Agency = Agency;
+                    qc.exists = false;
+                
+                    payments.add(qc);           
+                }
+            }    
             System.debug('payments =>' + payments);
 
             for(Sale_Spending_Payment__c  sp: sps){

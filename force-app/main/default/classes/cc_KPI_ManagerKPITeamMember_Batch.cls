@@ -21,9 +21,10 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
         List<KPI__c> listKPIsToUpdate = new List<KPI__c>();
         Map<String, KPI__c> mapKPIManager = new Map<String, KPI__c>();
         List<KPI__c> listKPIsToprocess = new List<KPI__c>();
+        System.debug('scope = >' + scope.size() );
 
         for(KPI__c kpi: scope){
-            if(kpi.RecordType.DeveloperName == 'Sale_Manager_KPI'){
+            if(kpi.RecordType.DeveloperName == 'Sale_Manager_KPI' || kpi.RecordType.DeveloperName == 'Support_Manager_KPI'){
                 mapKPIManager.put(kpi.Sales__c, kpi);
             }
 
@@ -35,6 +36,8 @@ global class cc_KPI_ManagerKPITeamMember_Batch implements Database.Batchable<SOb
             }
         }
 
+        System.debug('listKPIsToprocess = >' + listKPIsToprocess.size() );
+        System.debug('mapKPIManager = >' + mapKPIManager.size() );
 
         for(KPI__c kpi : listKPIsToprocess){
             if(mapKPIManager.containsKey(kpi.SalesManager__c)){

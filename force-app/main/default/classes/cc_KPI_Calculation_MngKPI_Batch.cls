@@ -24,7 +24,7 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
                                         FROM KPI__c 
                                         WHERE Period__c = : this.kpiperiod
                                             AND Status__c != 'Confirmed'
-                                            AND RecordType.DeveloperName = 'Sale_Manager_KPI']);
+                                            AND RecordType.DeveloperName IN ('Sale_Manager_KPI','Support_Manager_KPI')]);
     }
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){
@@ -39,7 +39,7 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
             kpiIds.add(kpi.Id);   
             this.KPIs.add(kpi);        
         }
-        System.debug('kpiIds => ' + kpiIds.size());
+        System.debug('MngKPI_Batch kpiIds => ' + kpiIds.size());
         for(Sale_Spending_Payment__c sp : [SELECT Id, KPI__c, KPI__r.KPIAutoNumber__c, KPI_Number__c, 
                                                 Payment_Amount__c, Spending_Amount__c, KPI_Category__c,
                                                 KPI__r.Sale_Manager_KPI__c, Name
@@ -58,7 +58,7 @@ global class cc_KPI_Calculation_MngKPI_Batch implements Database.Batchable<SObje
                                                 FROM Sale_Spending_Payment__c 
                                                 WHERE KPI__r.Period__c =: this.kpiperiod
                                                     AND KPI__r.Sale_Manager_KPI__c != ''
-                                                    AND KPI__r.RecordType.DeveloperName = 'Sale_KPI'
+                                                    AND KPI__r.RecordType.DeveloperName IN ('Sale_KPI','Support_KPI')
                                                 ]){
             if(mapTeamSps.containsKey(teamsp.KPI__r.Sale_Manager_KPI__c)){
                 mapTeamSps.get(teamsp.KPI__r.Sale_Manager_KPI__c).add(teamsp);

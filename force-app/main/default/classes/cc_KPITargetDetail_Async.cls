@@ -106,7 +106,7 @@ global class cc_KPITargetDetail_Async {
                                             WHERE Id IN :saletargetIds
                                             AND IsEdit__c = True
                                             AND KPI_Target__r.Status__c ='Approved'
-                                            AND KPITargetType__c = 'Sale_Manager_KPI']){
+                                            AND KPITargetType__c IN ('Sale_Manager_KPI','Support_Manager_KPI')]){
             String  targetKey = '##'    + (target.Sale__c ==null?'': target.Sale__c) 
                                         + (target.KPI_Category__c ==null?'':target.KPI_Category__c) 
                                         + (target.Period__c ==null?'': target.Period__c) ;            
@@ -121,7 +121,7 @@ global class cc_KPITargetDetail_Async {
         for(Sale_Spending_Payment__c sp: [SELECT Id, KPI__r.Sales__c,  SpendingKPI__c, PaymentKPI__c, KPI_Category__c, KPI__r.Period__c, KPI_Sale_Target__c
                                             FROM Sale_Spending_Payment__c
                                             WHERE KPI__r.Sales__c IN :saleIds
-                                                AND KPI__r.RecordType.DeveloperName = 'Sale_Manager_KPI'                                                
+                                                AND KPI__r.RecordType.DeveloperName IN ('Sale_Manager_KPI','Support_Manager_KPI')                                                
                                                 AND KPI__r.Period__c IN :periods]){
             String  spkey = '##'    + (sp.KPI__r.Sales__c ==null?'': sp.KPI__r.Sales__c) 
                                     + (sp.KPI_Category__c ==null?'':sp.KPI_Category__c) 

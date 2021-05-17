@@ -1,5 +1,5 @@
 @istest
-public class cc_KPI_CaculateController_Test {
+public class cc_KPI_Calculation_Support_Test {
     @TestSetup
     static void testSetup(){
         cc_setting__c ccSetting = cc_initData.initCustomeSetting();
@@ -27,15 +27,15 @@ public class cc_KPI_CaculateController_Test {
         String year = String.valueOf(today.year());
         String period = month +'-' + year ;
 
-        Profile pf = [SELECT ID FROM Profile WHERE Name = 'Sales Profile'];
-        User u1 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false);
-        User u2 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(2), null, 'Game', 'HN',false);
-        User u3 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(3), null, 'Game-Special', 'HN',false);
-        User u4 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(4), null, 'Local agency HN', 'HN',false);
-        User u5 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(5), null, 'Local Agency HN-Special Client', 'HN',false);
-        User u6 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(6), null, 'Global Agency', 'HN',false);
-        User u7 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(7), null, 'Global Agency', 'HN',true);
-        User u8 = cc_initData.initUser(pf.Id, 'Sales' ,' User' + String.valueOf(8), null, 'Local Agency HCM', 'HN',false);
+        Profile pf = [SELECT ID FROM Profile WHERE Name = 'Support Profile'];
+        User u1 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false);
+        User u2 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(2), null, 'Game', 'HN',false);
+        User u3 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(3), null, 'Game-Special', 'HN',false);
+        User u4 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(4), null, 'Local agency HN', 'HN',false);
+        User u5 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(5), null, 'Local Agency HN-Special Client', 'HN',false);
+        User u6 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(6), null, 'Global Agency', 'HN',false);
+        User u7 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(7), null, 'Global Agency', 'HN',true);
+        User u8 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(8), null, 'Local Agency HCM', 'HN',false);
         
         urs.add(u1);
         urs.add(u2);
@@ -108,9 +108,11 @@ public class cc_KPI_CaculateController_Test {
         for(User us: urs){
             Date startDate = today.toStartOfMonth();
             Date endate = startDate.addMonths(1) - 1;
-            String SaleKPIrecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Sale_KPI').getRecordTypeId(); 
+
+            String SupportKPIrecordtypeId = Schema.SObjectType.KPI__c.getRecordTypeInfosByDeveloperName().get('Support_KPI').getRecordTypeId();  
             KPI__c kpi = cc_initData.initKPI(us.alias + '-' + period, us.Id, period, startDate, endate, us.KPI_Category__c);
-            kpi.RecordTypeId = SaleKPIrecordtypeId;
+            kpi.RecordTypeId = SupportKPIrecordtypeId;
+
             kpis.add(kpi);
         }
 
@@ -147,12 +149,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[0].Id);
+                        datanormal.Support__c = urs[0].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[0].Id);
+                        dataPromo.Support__c = urs[0].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -164,12 +168,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[1].Id);
+                        datanormal.Support__c = urs[1].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[1].Id);
+                        dataPromo.Support__c = urs[1].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -181,12 +187,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[2].Id);
+                        datanormal.Support__c = urs[2].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[2].Id);
+                        dataPromo.Support__c = urs[2].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -198,12 +206,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Global Agency', 'Normal', urs[6].Id);
+                        datanormal.Support__c = urs[6].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Global Agency' ,'Promo', urs[6].Id);
+                        dataPromo.Support__c = urs[6].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -215,12 +225,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[3].Id);
+                        datanormal.Support__c = urs[3].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[3].Id);
+                        dataPromo.Support__c = urs[6].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -232,12 +244,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[4].Id);
+                        datanormal.Support__c = urs[4].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[4].Id);
+                        dataPromo.Support__c = urs[4].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -249,12 +263,14 @@ public class cc_KPI_CaculateController_Test {
                         Integer qty = 10 * d;
                         Decimal val = 1000 * d;                
                         QC_Account_Data__c datanormal = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency', 'Normal', urs[7].Id);
+                        datanormal.Support__c = urs[7].Id;
                         listQCAccountData.add(datanormal);
                     }else{
                         Integer qty = 20 * d;
                         Decimal val = 1500 * d;        
     
                         QC_Account_Data__c dataPromo = cc_initData.initQCAccountData(qc.Id,qc.AccountOwner__c, dtime, val, qty , qc.Industry__c, 'Local Agency','Promo', urs[7].Id);
+                        dataPromo.Support__c = urs[7].Id;
                         listQCAccountData.add(dataPromo);
                     }
                 }
@@ -281,7 +297,8 @@ public class cc_KPI_CaculateController_Test {
                 for(Integer d = 0; d < 5; d++){
                     Date dt = startDate.addDays(d);        
                     
-                    Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[0].Id, qc.Industry__c, 'Local Agency');    
+                    Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[0].Id, qc.Industry__c, 'Local Agency');  
+                    py.Support__c =  urs[0].Id; 
                     listPayment.add(py);
                     
                 }
@@ -290,18 +307,21 @@ public class cc_KPI_CaculateController_Test {
                     Date dt = startDate.addDays(d); 
 
                     Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[1].Id, qc.Industry__c, 'Local Agency');    
+                    py.Support__c =  urs[1].Id; 
                     listPayment.add(py);
                 }
             }else if(h == 3){
                 for(Integer d = 0; d < 5; d++){
                     Date dt = startDate.addDays(d);    
                     Payment__c py = cc_initData.initPayment(Real_Payment, transId, qc.Id, dt, urs[2].Id, qc.Industry__c, 'Local Agency') ;   
-                    listPayment.add(py);                    
+                    py.Support__c =  urs[2].Id; 
+                    listPayment.add(py);                   
                 }
             }else if(h == 4){
                 for(Integer d = 0; d < 5; d++){
                     Date dt = startDate.addDays(d); 
                     Payment__c py = cc_initData.initPayment(Real_Payment, transId, qc.Id, dt, urs[6].Id, qc.Industry__c, 'Global Agency')  ;  
+                    py.Support__c =  urs[6].Id; 
                     listPayment.add(py);  
                                         
                 }
@@ -310,14 +330,16 @@ public class cc_KPI_CaculateController_Test {
                     Date dt = startDate.addDays(d);    
                     
                     Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[3].Id, qc.Industry__c, 'Local Agency') ;   
-                    listPayment.add(py); 
+                    py.Support__c =  urs[3].Id; 
+                    listPayment.add(py);
                 }
             }else if(h == 6){
                 for(Integer d = 0; d < 5; d++){
                     Date dt = startDate.addDays(d);   
                     
                     Payment__c py = cc_initData.initPayment(Standard_payment, transId, qc.Id, dt, urs[4].Id, qc.Industry__c, 'Local Agency') ;   
-                    listPayment.add(py); 
+                    py.Support__c =  urs[4].Id; 
+                    listPayment.add(py);
 
                 }
             }else if(h == 7){
@@ -325,7 +347,8 @@ public class cc_KPI_CaculateController_Test {
                     Date dt = startDate.addDays(d); 
                     
                     Payment__c py = cc_initData.initPayment(Standard_payment, transId, qc.Id, dt, urs[7].Id, qc.Industry__c, 'Local Agency')  ;  
-                    listPayment.add(py);                     
+                    py.Support__c =  urs[7].Id; 
+                    listPayment.add(py);                   
                 }
             }
 
@@ -383,146 +406,78 @@ public class cc_KPI_CaculateController_Test {
         }
 
         insert events;
+
     }
 
-    public testmethod static void GlobalAgencyTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User7-' + period;
 
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();       
-    }   
-
-    public testmethod static void MessageTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User6-' + period;
-
-        KPI__c kpi = [SELECT Id, Status__c, To_Date__c, From_Date__c, Sales__c FROM KPI__c WHERE Name = :name LIMIT 1];
-        kpi.Status__c = 'Confirmed';
-        update kpi;
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();   
-        
-        
-        kpi.Status__c = 'New';
-        kpi.From_Date__c = null;
-        kpi.To_Date__c = null;
-        update kpi;
-
-        ApexPages.StandardController sc2 = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol2 = new cc_KPI_CaculateController(sc);
-        kpictrol2.calculateKPI();  
-       
-    } 
+    public testmethod static void TestShedule(){
+        List<Account> listAcc = new List<Account>();
+        List<QC_Account__c> listQCAcc = new List<QC_Account__c>();       
+        List<QC_Account_Data__c> listQCAccountData = new List<QC_Account_Data__c>();
+        List<User> urs = new List<User>();
+        List<KPI__c> kpis = new List<KPI__c>();
+        List<Sale_Spending_Payment__c> sps = new List<Sale_Spending_Payment__c>();
+        List<Lead> leads = new List<Lead>();
+        List<Opportunity> newopps = new List<Opportunity>();
+        List<Opportunity> Closewonopps = new List<Opportunity>();
+        List<Opportunity> Closelostopps = new List<Opportunity>();
+        List<Task> calltasks = new List<Task>();
+        List<Task> emailtasks = new List<Task>();
+        List<Event> events = new List<Event>();
+        List<Payment__c> payments = new List<Payment__c>();
 
 
-    public testmethod static void IndustryTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User1-' + period;
+        listAcc = [SELECT Id FROM Account];
+        listQCAcc = [SELECT Id FROM QC_Account__c];
+        listQCAccountData = [SELECT Id FROM QC_Account_Data__c];
+        urs = [SELECT Id FROM User];
+        kpis = [SELECT Id FROM KPI__c];
+        sps = [SELECT Id FROM Sale_Spending_Payment__c];
+        for(Payment__c py: [SELECT Id , Sale__c FROM Payment__c WHERE  Stage__c = 'Done'
+                                            AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
+                                            AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') ]){
+                                                System.debug('py.sale__c =>' + py.sale__c);
+                                            }
+        leads = [SELECT Id FROM Lead];
+        newopps = [SELECT Id FROM Opportunity WHERE StageName = 'New'];
+        Closewonopps = [SELECT Id FROM Opportunity WHERE StageName = 'Close Won'];
+        Closelostopps = [SELECT Id FROM Opportunity WHERE StageName = 'Close Lost'];
+        calltasks = [SELECT Id FROM Task WHERE Tasksubtype = 'Call'];
+        emailtasks = [SELECT Id FROM Task WHERE Tasksubtype = 'Email'];
+        events = [SELECT Id FROM Event];
 
-        KPI__c kpi1 = [SELECT Id FROM KPI__c WHERE Name =  :name LIMIT 1];
 
-        ApexPages.StandardController sc1 = new ApexPages.StandardController(kpi1);
-        cc_KPI_CaculateController kpictrol1 = new cc_KPI_CaculateController(sc1);
-        kpictrol1.calculateKPI();
-    }
+        System.debug('payments =>' + payments);
+        System.debug('listAcc =>' + listAcc.size());
+        System.debug('listQCAcc =>' + listQCAcc.size());
+        System.debug('listQCAccountData =>' + listQCAccountData.size());
+        System.debug('urs =>' + urs.size());
+        System.debug('kpis =>' + kpis.size());
+        System.debug('sps =>' + sps.size());
 
-    public testmethod static void IndustrySpecialTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User2-' + period;
+        System.debug('leads =>' + leads.size());
+        System.debug('newopps =>' + newopps.size());
+        System.debug('Closewonopps =>' + Closewonopps.size());
+        System.debug('Closelostopps =>' + Closelostopps.size());
+        System.debug('calltasks =>' + calltasks.size());
+        System.debug('emailtasks =>' + emailtasks.size());
+        System.debug('events =>' + events.size());
 
-        KPI__c kpi0 = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
 
-        ApexPages.StandardController sc0 = new ApexPages.StandardController(kpi0);
-        cc_KPI_CaculateController kpictrol0 = new cc_KPI_CaculateController(sc0);
-        kpictrol0.calculateKPI();
-
-        String name2 = 'User3-' + period;
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name2 LIMIT 1];
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();
-    }
-
-    public testmethod static void LocalAgencyTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User4-' + period;
-
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();
-    }
-    
-    public testmethod static void LocalAgencySpecialTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User5-' + period;
-
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();
-    }
-
-    
-    public testmethod static void LocalAgencyHCMTest(){
-        Date today = System.today();      
-        String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-        String year = String.valueOf(today.year());
-        String period = month +'-' + year ;
-        String name = 'User8-' + period;
-
-        KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
-
-        ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-        cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-        kpictrol.calculateKPI();
-    }
-
-    public testmethod static void testBatchGendile(){
         Test.startTest();
-            Date today = System.today();      
-            String month = today.month() < 10?'0' + String.valueOf(today.month()) : String.valueOf(today.month());
-            String year = String.valueOf(today.year());
-            String period = month +'-' + year ;
-            String name = 'User4-' + period;
 
-            KPI__c kpi = [SELECT Id FROM KPI__c WHERE Name = :name LIMIT 1];
+            Datetime dt = Datetime.now().addMinutes(2);
+            String CRON_EXP = '0 '+ dt.minute() + ' * ' + dt.day() + ' ' + dt.month() + ' ? ' + dt.year();
 
-            ApexPages.StandardController sc = new ApexPages.StandardController(kpi);
-            cc_KPI_CaculateController kpictrol = new cc_KPI_CaculateController(sc);
-            kpictrol.calculateKPI();
-
-        try {
-            Test.stopTest();
-        } catch (Exception ex) {
             
-        }
+            String jobId = System.schedule('calSuportKPI_test', CRON_EXP, new cc_KPI_Calculation_Support_Schedule());
+
+            CronTrigger ct = [SELECT id, CronExpression, TimesTriggered, NextFireTime from CronTrigger where id = :jobId];
+            
+            System.assertEquals(CRON_EXP, ct.CronExpression); 
+            System.assertEquals(0, ct.TimesTriggered);
+            
+
+        Test.stopTest();
     }
 }

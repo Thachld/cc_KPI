@@ -6,21 +6,37 @@ global class cc_KPI_CalculationActivities_Batch implements Database.Batchable<sO
     List<Daily_KPI__c> updateKPIDetails {get;set;}    
     List<cc_DMLResult_wrapper> lserrors  {get;set;} 
     public Map<String, List<cc_kpimetrics_wraper>> mapMetrics{get;set;}
+    public Boolean isrunNextJob {get;set;}
 
-    public cc_KPI_CalculationActivities_Batch(Set<String> pKPIIds, Date pminDate, Date pmaxDate) {
-        this.kpiIds = pKPIIds;
-        this.minDate = pminDate;
-        this.maxDate = pmaxDate;
+    public cc_KPI_CalculationActivities_Batch(String period, Boolean pisrunNextJob) {
+        this.kpiPeriod = period;        
         this.lserrors = new List<cc_DMLResult_wrapper>();
         this.updateKPIDetails = new List<Daily_KPI__c>();
         this.mapMetrics = new Map<String, List<cc_kpimetrics_wraper>>();
+        this.isrunNextJob = pisrunNextJob;
+
+        date dtToday = date.today();
+        Date rundate;
+        //Get First day of month and last day Of Month in runing period        
+        if(!string.isBlank(period)){    
+            string[] M = period.split('-');
+            dtToday = date.NewInstance(integer.valueOf(M[1]), integer.valueOf(M[0]), 1 );
+            rundate = dtToday;
+        }else{           
+            rundate = dttoday.addMonths(-1);                
+        }
+
+        this.minDate = rundate.toStartOfMonth();        
+        this.maxDate = minDate.addDays(Date.daysInMonth(minDate.year(), minDate.month()) - 1);  
     }
 
     global Database.QueryLocator start(Database.BatchableContext bc) {
         return Database.getQueryLocator([SELECT Id, Sales__c                                               
                                         FROM KPI__c 
-                                        WHERE Id  IN :this.kpiIds
-                                            AND RecordType.DeveloperName = 'Sale_KPI']); 
+                                        WHERE Period__c =: this.kpiPeriod
+                                            AND RecordType.DeveloperName = 'Sale_KPI'
+                                            AND Status__c != 'Confirmed'
+                                            ]); 
     }
 
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){
@@ -258,6 +274,10 @@ global class cc_KPI_CalculationActivities_Batch implements Database.Batchable<sO
     }
 
     global void finish(Database.BatchableContext bc){
- 
+        if(this.isrunNextJob){
+            Set<String> pkpiIds = new Set<String>();
+            cc_KPI_GeneratedetailFile_batch generatefile = new cc_KPI_GeneratedetailFile_batch(this.kpiPeriod, pkpiIds);
+            Database.executeBatch(generatefile, 20);      
+        }
     }
 }

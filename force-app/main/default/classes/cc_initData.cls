@@ -121,6 +121,16 @@ public class cc_initData {
         return l;
     }
 
+    public static Lead initLead(String name, String email, String website){
+        Lead l = new Lead();
+        l.Industry_c__c = 'Ecommerce';
+        l.LastName = name;        
+        l.Website = website;
+        l.Email = email;
+        return l;
+    }
+
+
     public static Lead initLead(String ownerId, String website){
         Lead l = new Lead();
         l.Industry_c__c = 'Ecommerce';
@@ -266,6 +276,22 @@ public class cc_initData {
         return post;
     }
 
+    public static FeedItem initFeedItem(string caseId, String title, String body){
+        FeedItem post = new FeedItem();
+        post.ParentId = caseId;       
+        post.Body = body;
+        post.Title = title;        
+        return post;
+    }
+
+    public static FeedComment initFeedComment(string feedId, String body){
+        FeedComment comm = new FeedComment();        
+        comm.CommentBody  = body;
+        comm.CommentType  = 'TextComment';   
+        comm.FeedItemId = feedId;     
+        return comm;
+    }
+
     public static Opportunity initOpportunity(id accId){
         Opportunity opp = new Opportunity();
         opp.StageName = 'New';
@@ -335,6 +361,16 @@ public class cc_initData {
         return member;
     }
 
+    public static CampaignMember initCampaignMember(String campId, String leadid, String status){
+        CampaignMember member = new CampaignMember();
+        
+        member.CampaignId = campId;
+        member.LeadId = leadid;
+        member.Status = 'Sent';  
+
+        return member;
+    }
+
     public static Contact initContact(String name, String accountId){
         Contact con = new Contact();
         
@@ -372,6 +408,24 @@ public class cc_initData {
         prf.ProfileId__c = prfId;
 
         return prf;
+    }
+
+    public static AccountTeamMember initTeamAccount(string accountId, string userId, string role){
+        AccountTeamMember team = new AccountTeamMember();
+        team.AccountAccessLevel = 'Read';
+        team.ContactAccessLevel = 'None';
+        team.OpportunityAccessLevel = 'None';
+        team.CaseAccessLevel = 'None';
+        
+        team.AccountId = accountId;
+        if(!String.isBlank(role)){
+            team.TeamMemberRole = role;
+        }else{
+            team.TeamMemberRole = 'Ad Op Manager';
+        }       
+        
+        team.UserId = userId;
+        return team;
     }
 
     public static cc_Batch_Parameter__c initbatchParamSetting(String name, Date fromDt, Date toDT, String clause1,String clause2, 
@@ -413,9 +467,23 @@ public class cc_initData {
         kpi.SendEmailToManager__c = true;
         kpi.SendEmailToSale__c = true;   
         kpi.Sales_Director__c = '0050o00000Xn1UNAAZ';
-        kpi.Sales_Director_PA__c = '0050o00000Xn3cmAAB';       
+        kpi.Sales_Director_PA__c = '0050o00000Xn3cmAAB';    
+        kpi.PaymentRecordType__c = 'Normal payment,Real Payment,Standard payment';    
+        kpi.Paymentmethod__c = 'Cash,Bank Transfer,Payment Gateway';  
+        kpi.IncludePayment__c = true;       
 
         return kpi;
+    }
+
+    public static cc_Jira_Integration__c initJiraIntegrationSetting(String name, String dfjiraId){
+        cc_Jira_Integration__c jira = new cc_Jira_Integration__c();
+        jira.Name = name;       
+        jira.defaultUser__c = dfjiraId;   
+        jira.Defaut_Project__c = 'FS';
+        jira.FieldLogChange__c = 'summary,status,assignee,project,priority,description,customfield_10049,reporter,issuetype,duedate	';          
+        jira.restpath__c = 'rest/api/3/issue';       
+
+        return jira;
     }
 
     public static KPI__c initKPI(String name, String saleId, String period, Date startdt, Date enddt, String KPIcat){
@@ -516,7 +584,59 @@ public class cc_initData {
 
         return rq;
     }
-    
+
+    public static EmailTemplate  initEmailTemplate(String name, String devname, String sub, String BodyVar){
+        EmailTemplate emailTemplate = new EmailTemplate();
+        emailTemplate.isActive = true;
+        emailTemplate.Name = name;
+        emailTemplate.Subject = sub;
+        emailTemplate.DeveloperName = devname;
+        emailTemplate.Body = BodyVar;      
+        emailTemplate.TemplateType = 'text';
+        emailTemplate.FolderId = UserInfo.getUserId();
+
+        return emailTemplate;
+    }  
+
+    public static ContentVersion  initContentVersion(String title, String body,String recordId){
+        ContentVersion content = new ContentVersion(); 
+        content.Title  =  title; 
+        content.PathOnClient= title ;        
+        content.VersionData = Blob.valueOf(body); 
+        content.FirstPublishLocationId  = recordId;
+
+        return content;
+    }
+
+
+    public static ContentDocumentLink initContentDocumentLink (String contentId, String linkedEntityId){
+        ContentDocumentLink contentlink = new ContentDocumentLink();
+        contentlink.LinkedEntityId  = linkedEntityId;
+        contentlink.contentdocumentid= [SELECT contentdocumentid FROM contentversion where id =: contentId].contentdocumentid;
+        contentlink.ShareType = 'I';
+        contentlink.Visibility = 'AllUsers'; 
+
+        return contentlink;
+    }
+
+    public static Case initJiraCase(String sbj, String descr, String ccUserId ){
+        Case cs = new Case();
+        cs.Subject = sbj;
+        cs.Description = descr;
+        cs.Status = 'New';
+        cs.Origin = 'Web';
+        cs.CreateJiraTicket__c = true;
+        cs.Priority = 'Medium';        
+        cs.DueDate__c = System.today() + 10;
+        cs.IssueType__c = 'Task';
+        cs.JiraCC__c = ccUserId;
+        cs.JiraProject__c = 'FS';
+        cs.Severity__c = 'Critical';
+
+        return cs;
+    }
+  
+
     public static QC_Account_Data__c initQCAccountData(String qcId, String accId, Datetime syndate, Decimal val,Integer qty,String type){
         QC_Account_Data__c data = new QC_Account_Data__c();
 
@@ -549,7 +669,7 @@ public class cc_initData {
         data.double_zen_cards_spending__c = 0; 
         data.video_masthead_spending__c = 0;
         data.masthead_jscode_spending__c = 1 * val; 
-        data.vast_skin_spending__c = 0;
+        // data.vast_skin_spending__c = 0;
         data.skintool_skin_spending__c = 1 * val; 
         data.skintool_video_skin_spending__c = 0;
         data.skintool_masthead_video_spending__c = 1 * val; 
@@ -572,7 +692,7 @@ public class cc_initData {
         data.double_zen_cards_show__c = 0; 
         data.video_masthead_show__c = 0;
         data.masthead_jscode_show__c = 1* qty; 
-        data.vast_skin_show__c = 0;
+        // data.vast_skin_show__c = 0;
         data.skintool_skin_view__c = 1* qty; 
         data.skintool_video_skin_view__c = 0;
         data.skintool_masthead_video_view__c = 0; 
@@ -595,7 +715,7 @@ public class cc_initData {
         data.double_zen_cards_click__c = 0; 
         data.video_masthead_click__c = 1* qty;
         data.masthead_jscode_click__c = 0; 
-        data.vast_skin_click__c = 0;
+        // data.vast_skin_click__c = 0;
         data.skintool_skin_click__c = 0; 
         data.skintool_video_skin_click__c = 0;
         data.skintool_masthead_video_click__c = 0; 
@@ -640,7 +760,7 @@ public class cc_initData {
         data.double_zen_cards_spending__c = 0; 
         data.video_masthead_spending__c = 0;
         data.masthead_jscode_spending__c = 1 * val; 
-        data.vast_skin_spending__c = 0;
+        // data.vast_skin_spending__c = 0;
         data.skintool_skin_spending__c = 1 * val; 
         data.skintool_video_skin_spending__c = 0;
         data.skintool_masthead_video_spending__c = 1 * val; 
@@ -663,7 +783,7 @@ public class cc_initData {
         data.double_zen_cards_show__c = 0; 
         data.video_masthead_show__c = 0;
         data.masthead_jscode_show__c = 1* qty; 
-        data.vast_skin_show__c = 0;
+        // data.vast_skin_show__c = 0;
         data.skintool_skin_view__c = 1* qty; 
         data.skintool_video_skin_view__c = 0;
         data.skintool_masthead_video_view__c = 0; 
@@ -686,7 +806,7 @@ public class cc_initData {
         data.double_zen_cards_click__c = 0; 
         data.video_masthead_click__c = 1* qty;
         data.masthead_jscode_click__c = 0; 
-        data.vast_skin_click__c = 0;
+        // data.vast_skin_click__c = 0;
         data.skintool_skin_click__c = 0; 
         data.skintool_video_skin_click__c = 0;
         data.skintool_masthead_video_click__c = 0; 

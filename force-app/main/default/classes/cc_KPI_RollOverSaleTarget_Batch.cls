@@ -6,9 +6,9 @@ global class cc_KPI_RollOverSaleTarget_Batch implements Database.Batchable<SObje
 
 
     global Database.QueryLocator start(Database.BatchableContext bc){
-        return Database.getQueryLocator([SELECT Id, ManagerId, KPI_Category__c, Trac_Name__c, Working_direct__c
+        return Database.getQueryLocator([SELECT Id, ManagerId, KPI_Category__c, Trac_Name__c, Working_direct__c, Profile.Name
                                         FROM User 
-                                        WHERE Profile.Name = 'Sales Profile'
+                                        WHERE Profile.Name IN ('Sales Profile','Support Profile','HotLine Profile')
                                             AND KPI_Category__c != ''
                                             AND IsActive = true]);       
     
@@ -39,20 +39,22 @@ global class cc_KPI_RollOverSaleTarget_Batch implements Database.Batchable<SObje
                 System.debug('mngId = >' + mngId);
 
                 //Team KPI
-                KPI_Target__c target = new KPI_Target__c();            
-                target.Name = 'KPI Team member - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;
-                target.Quarter__c = this.quater;
-                target.Sale_Manager__c = mngId;
-                target.Approval_Status__c = 'New';
-                target.Status__c = 'New';
-                target.recordtypeId = salerecordtypeId;
-                target.OwnerId = mngId;
+                if(mapUser.get(mngId).Profile.Name == 'Sales Profile'){
+                    KPI_Target__c target = new KPI_Target__c();            
+                    target.Name = 'KPI Team member - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;
+                    target.Quarter__c = this.quater;
+                    target.Sale_Manager__c = mngId;
+                    target.Approval_Status__c = 'New';
+                    target.Status__c = 'New';
+                    target.recordtypeId = salerecordtypeId;
+                    target.OwnerId = mngId;
 
-                if(mapUser.get(mngId).Working_direct__c){
-                    target.Include_Manager__c = true;
+                    if(mapUser.get(mngId).Working_direct__c){
+                        target.Include_Manager__c = true;
+                    }
+                    kpitargettoInsert.add(target);
                 }
-                kpitargettoInsert.add(target);
-
+                    
                 //Manager KPI
                 KPI_Target__c mngtarget = new KPI_Target__c();            
                 mngtarget.Name = 'KPI Manager - ' + mapUser.get(mngId).Trac_Name__c + ' - Q' + this.quater;

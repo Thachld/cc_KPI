@@ -104,7 +104,7 @@ public class cc_KPI_ApplySaleTarget_Schedule_Test {
         String CRON_EXP = '0 '+ dt.minute() + ' * ' + dt.day() + ' ' + dt.month() + ' ? ' + dt.year();
 
         
-        String jobId = System.schedule('calKPI', CRON_EXP, new cc_KPI_ApplySaleTarget_Schedule());
+        String jobId = System.schedule('calKPITest', CRON_EXP, new cc_KPI_ApplySaleTarget_Schedule());
 
         CronTrigger ct = [SELECT id, CronExpression, TimesTriggered, NextFireTime from CronTrigger where id = :jobId];
         
