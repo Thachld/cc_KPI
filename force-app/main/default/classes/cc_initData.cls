@@ -471,6 +471,8 @@ public class cc_initData {
         kpi.PaymentRecordType__c = 'Normal payment,Real Payment,Standard payment';    
         kpi.Paymentmethod__c = 'Cash,Bank Transfer,Payment Gateway';  
         kpi.IncludePayment__c = true;       
+        kpi.SaleEmailtemplate__c = 'Sale_KPI_Template';       
+        kpi.SupportEmailTemplate__c = 'Support_KPI_Template';       
 
         return kpi;
     }
@@ -634,6 +636,15 @@ public class cc_initData {
         cs.Severity__c = 'Critical';
 
         return cs;
+    }
+
+    public static Attachment initAttachment(String name, String body, String parentId){
+        Attachment att = new Attachment();
+        att.Name = name;
+        att.ParentId = parentId;
+        att.Body = Blob.valueOf(body);
+
+        return att;
     }
   
 

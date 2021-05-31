@@ -1,4 +1,4 @@
-global class cc_KPI_GendetailFile_Support_batch implements Database.Batchable<SObject> {
+global class cc_KPI_GendetailFile_Support_batch implements Database.Batchable<SObject>, Database.Stateful {
     private String kpiPeriod {get;set;}
     private Datetime minDateTime {get;set;}
     private Datetime maxDateTime {get;set;}
@@ -295,7 +295,10 @@ global class cc_KPI_GendetailFile_Support_batch implements Database.Batchable<SO
         }
     }
 
-    global void finish(Database.BatchableContext bc){        
-
+    global void finish(Database.BatchableContext bc){  
+        Set<String> reporttype = new Set<String>();
+        reporttype.add('Support_KPI');        
+        cc_KPI_SendEmail_Batch batch = new cc_KPI_SendEmail_Batch(this.kpiPeriod, reporttype, this.runinkpis);
+        database.executeBatch(batch,20);
     }
 }

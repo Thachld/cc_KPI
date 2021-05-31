@@ -369,61 +369,6 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                     insert errsLog;
                 }
             }
-        }
-
-        if(this.kpisetting != null){
-            if(this.kpisetting.SendEmailToSale__c){
-                Messaging.Email[] messages = new Messaging.Email[0];
-                for(KPI__c kpi : this.KPIs){
-                    Messaging.SingleEmailMessage email = sendEmail(kpi);
-                    messages.add(email);            
-                }
-                try {
-                    Messaging.sendEmail(messages);
-                } catch (Exception ex) {
-                    
-                }    
-            }
-        }
-            
-    }
-
-
-    public Messaging.SingleEmailMessage sendEmail(KPI__c kpi ){
-        Messaging.Email[] messages = new Messaging.Email[0];
-        Datetime dtNow = System.now();
-        String dtNowformat = dtNow.formatGMT('yyyy-MM-dd\'T\'HH:mm:ss.SSSZ');
-        
-        List<String> emails = new List<String>();     
-        if(kpi.Sales__c == this.kpisetting.Sales_Director__c){
-            User pa = [SELECT Id, Email FROM User WHERE Id = : this.kpisetting.Sales_Director_PA__c];
-            if(pa != null){
-                emails.add(pa.Email);        
-            }else{
-                emails.add(kpi.Sales__r.Email);        
-            }
-        }else {
-            emails.add(kpi.Sales__r.Email);        
-        }       
-
-        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();           
-        mail.setSaveAsActivity(false);   
-        mail.setSenderDisplayName('Cốc Cốc Salesforce System'); 
-
-        mail.setSubject('[KPI] - Sale KPI Result - '+  kpi.Name);
-        mail.setHtmlBody(              
-                  '<br/><br/><b>Dear user ' + kpi.Sales__r.LastName + '</b>'
-				+ '<br/><br/>  Your KPI result has been completed to calulation ' 
-                + '<br/>KPI Period:' + kpi.Period__c
-                + '<br/>From Date:' + kpi.From_Date__c
-                + '<br/>End Date:' + kpi.To_Date__c               
-                + '<br/>Link: ' + URL.getSalesforceBaseUrl().toExternalForm() + '/' + kpi.Id
-
-                + '<br/><br/>Thank you!'                
-                );
-
-        mail.setToAddresses(emails);
-
-        return mail;
-    }
+        }            
+    }    
 }
