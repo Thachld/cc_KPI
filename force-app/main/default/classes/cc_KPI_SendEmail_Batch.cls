@@ -11,7 +11,7 @@ public class cc_KPI_SendEmail_Batch implements Database.Batchable<SObject>{
         this.runinkpis = pkpi;
 
         if(pkpi != null && pkpi.size() > 0){
-            this.sqlStr = 'SELECT Name, Id, RecordType.DeveloperName, OwnerId ';            
+            this.sqlStr = 'SELECT Name, Id, RecordType.DeveloperName, OwnerId , Sale__c';            
             this.sqlStr = this.sqlStr + ' FROM KPI__c WHERE Period__c =:kpiPeriod';
             this.sqlStr = this.sqlStr + ' AND  RecordType.DeveloperName IN :kpireporttypes';
             this.sqlStr = this.sqlStr + ' AND Status__c != \'Confirmed\'';
@@ -47,6 +47,7 @@ public class cc_KPI_SendEmail_Batch implements Database.Batchable<SObject>{
         supportemailtemplateId = supporttemplate.Id;
         isSendSaleEmail = kpisetting.SendEmailToSale__c;
 
+        
         Set<String> kpiIds = new Set<String>();
         for(KPI__c kpi: scope){
             kpiIds.add(kpi.Id);
@@ -62,68 +63,68 @@ public class cc_KPI_SendEmail_Batch implements Database.Batchable<SObject>{
             }
         }
 
+        if(isSendSaleEmail){
+            //get attachment files
+            if(mapAttachfiles.size() > 0){
+                for(String kpiId : mapAttachfiles.keySet() ){
+                    List<Attachment> atts = mapAttachfiles.get(kpiId);
 
-        //get attachment files
-        if(mapAttachfiles.size() > 0){
-            for(String kpiId : mapAttachfiles.keySet() ){
-                List<Attachment> atts = mapAttachfiles.get(kpiId);
+                    for(Attachment att : atts){
+                        Messaging.EmailFileAttachment efa = new Messaging.EmailFileAttachment();
+                        Blob body = (Blob)att.Body;               
+                        efa.setFileName(att.Name);
+                        efa.setContentType(att.ContentType);
+                        efa.setInline(false);
+                        efa.setBody(body);
 
-                for(Attachment att : atts){
-                    Messaging.EmailFileAttachment efa = new Messaging.EmailFileAttachment();
-                    Blob body = (Blob)att.Body;               
-                    efa.setFileName(att.Name);
-                    efa.setContentType(att.ContentType);
-                    efa.setInline(false);
-                    efa.setBody(body);
-
-                    if(mapEfas.containsKey(kpiId)){
-                        mapEfas.get(kpiId).add(efa);
-                    }else{
-                        mapEfas.put(kpiId, new List<Messaging.EmailFileAttachment>{efa});
+                        if(mapEfas.containsKey(kpiId)){
+                            mapEfas.get(kpiId).add(efa);
+                        }else{
+                            mapEfas.put(kpiId, new List<Messaging.EmailFileAttachment>{efa});
+                        }
                     }
+
                 }
-
             }
-        }
 
 
-        //Generate Single email message
-        for(KPI__c kpi: scope){
-            Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();                
-            if(kpi.RecordType.DeveloperName== 'Sale_KPI' && !String.isBlank(saleemailtemplateId)){                
-                mail = Messaging.renderStoredEmailTemplate(saleemailtemplateId, kpi.OwnerId, kpi.Id);
-            }else if(kpi.RecordType.DeveloperName== 'Support_KPI' && !String.isBlank(supportemailtemplateId)){                         
-                mail = Messaging.renderStoredEmailTemplate(supportemailtemplateId, kpi.OwnerId, kpi.Id);
-            }            
+            //Generate Single email message
+            for(KPI__c kpi: scope){
+                Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();                
+                if(kpi.RecordType.DeveloperName== 'Sale_KPI' && !String.isBlank(saleemailtemplateId)){                
+                    mail = Messaging.renderStoredEmailTemplate(saleemailtemplateId, kpi.OwnerId, kpi.Id);
+                }else if(kpi.RecordType.DeveloperName== 'Support_KPI' && !String.isBlank(supportemailtemplateId)){                         
+                    mail = Messaging.renderStoredEmailTemplate(supportemailtemplateId, kpi.OwnerId, kpi.Id);
+                }            
 
-            if(mail !=null ){ 
-                String subject = mail.getSubject() + kpi.Name;   
-                mail.setSubject(subject);
-                mail.setReplyTo('salesforce@coccoc.com');
-                mail.setSenderDisplayName('Cốc Cốc Salesforce');                   
-                mail.setSaveAsActivity(false);
-                mail.setUseSignature(false);                       
-                mail.setBccSender(false);    
-                
-                if(mapEfas.containsKey(kpi.Id)){
-                    mail.setFileAttachments(mapEfas.get(kpi.Id));
+                if(mail !=null ){ 
+                    String subject = mail.getSubject() + kpi.Name;   
+                    mail.setSubject(subject);
+                    mail.setReplyTo('salesforce@coccoc.com');
+                    mail.setSenderDisplayName('Cốc Cốc Salesforce');                   
+                    mail.setSaveAsActivity(false);
+                    mail.setUseSignature(false);                       
+                    mail.setBccSender(false);    
+                    
+                    if(mapEfas.containsKey(kpi.Id)){
+                        mail.setFileAttachments(mapEfas.get(kpi.Id));
+                    }
+
+                    emails.add(mail);
+
                 }
-
-                emails.add(mail);
-
             }
-        }
 
-        System.debug('emails' + emails.size());
-        if(emails.size() > 0){
-            try { 
-                Messaging.sendEmail(emails,true);   
-    
-            } catch (Exception e) {
-                System.debug(e.getMessage());
-            }    
-        }
-
+            System.debug('emails' + emails.size());
+            if(emails.size() > 0){
+                try { 
+                    Messaging.sendEmail(emails,true);   
+        
+                } catch (Exception e) {
+                    System.debug(e.getMessage());
+                }    
+            }
+        }    
     }
 
     public void finish(Database.BatchableContext bc){
