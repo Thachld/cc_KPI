@@ -42,7 +42,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
       
         return Database.getQueryLocator([SELECT Id, Name, Sales__c, Sales__r.LastName, Sales__r.Email,
                                                 SalesManager__c, From_Date__c, To_Date__c, Period__c,
-                                                KPI_Category__c                                                
+                                                KPI_Category__c, TotalRefundAmount__c                                                
                                         FROM KPI__c WHERE Period__c =: kpiPeriod
                                             AND RecordType.DeveloperName = 'Sale_KPI'
                                             AND Status__c != 'Confirmed']);
@@ -55,6 +55,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
         Map<String, List<Sale_Spending_Payment__c>> mapSP= new Map<String, List<Sale_Spending_Payment__c>>();
         Map<String, List<cc_QCData_wraper>> mapSpending = new Map<String, List<cc_QCData_wraper>>();
         Map<String, List<cc_QCData_wraper>> mapPayment = new Map<String, List<cc_QCData_wraper>>();
+        Map<String, cc_QCData_wraper> mapRefund = new Map<String, cc_QCData_wraper>();
 
         for(KPI__c kpi: scope){
             kpiIds.add(kpi.Id);
@@ -76,6 +77,8 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
             }                                 
         }
 
+
+        //Spending 
         for(AggregateResult arr  :  [SELECT Sale__c Sale__c, 
                                             Xaxis__c Xaxis__c, 
                                             Special_client__c Special_client__c, 
@@ -192,7 +195,7 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                                                 AND Stage__c = 'Done'
                                                 AND QC_Account__r.Type__c != 'Internal' 
                                                 AND Payment_method__c IN :acceptedpaymentmethods
-                                                AND RecordType.Name IN :acceptedReccordtypes
+                                                AND RecordType.DeveloperName IN :acceptedReccordtypes
                                                 AND Sale__c IN  :mapSale.keySet()                                                    
                                             GROUP BY Sale__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c, Xaxis_Owner__c,Strategic_Client__c]){
 
@@ -265,7 +268,33 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                     mapPayment.put(sale, new List<cc_QCData_wraper> {qc}); 
                 }            
             }
-        }    
+        }   
+        
+        
+        //Refund Payment
+        for(AggregateResult arr  :  [SELECT Sale__c Sale__c,                             
+                                        SUM(Final_Amount__c) Final_Amount__c
+                                        FROM Payment__c 
+                                        WHERE EffectiveDate__c >=: this.minDate 
+                                            AND EffectiveDate__c <=: this.maxDate 
+                                            AND Stage__c = 'Done'
+                                            AND QC_Account__r.Type__c != 'Internal' 
+                                            AND Payment_method__c IN :acceptedpaymentmethods
+                                            AND RecordType.DeveloperName = 'Refund_payment'
+                                            AND Refund_Type__c = 'Refund to Client' 
+                                            AND Sale__c IN  :mapSale.keySet()                                                    
+                                        GROUP BY Sale__c]){
+
+            cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
+            qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
+            String sale = (String) arr.get('Sale__c');            
+
+            if(!String.isBlank(sale)){
+                mapRefund.put(sale, qc);
+            }                                
+
+        }
+
 
         for(KPI__c kpi : scope){
 
@@ -309,6 +338,14 @@ global class cc_KPI_Calculation_Batch implements Database.Batchable<sObject>, Da
                     this.listUpSertSP.add(sp);   
                                 
                 }              
+            }
+
+
+            if(mapRefund != null){
+                cc_QCData_wraper rf = mapRefund.get(kpi.Sales__c);
+                if(rf != null && rf.Amount !=null){
+                    kpi.TotalRefundAmount__c = (rf.Amount == null?0 : rf.Amount);
+                }
             }
 
             this.kpiIds.add(kpi.Id);            

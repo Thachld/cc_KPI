@@ -49,7 +49,8 @@ public with sharing class cc_KPI_CaculateController {
                             Period__c,
                             From_Date__c, 
                             To_Date__c, 
-                            KPI_Category__c                            
+                            KPI_Category__c, 
+                            TotalRefundAmount__c                     
                     FROM KPI__c WHERE Id =:this.kpiId LIMIT 1];
     }
 
@@ -87,8 +88,23 @@ public with sharing class cc_KPI_CaculateController {
         List<Sale_Spending_Payment__c> sps = new List<Sale_Spending_Payment__c>();
         List<cc_QCData_wraper> spendings = new List<cc_QCData_wraper>();
         List<cc_QCData_wraper> payments = new List<cc_QCData_wraper>();
+        cc_QCData_wraper refund = new cc_QCData_wraper();
         Datetime minDateTime = Datetime.newInstance(this.MKPI.From_Date__c.year(), this.MKPI.From_Date__c.month(), this.MKPI.From_Date__c.day(), 0,0,0);       
         Datetime maxDateTime = Datetime.newInstance(this.MKPI.To_Date__c.year(), this.MKPI.To_Date__c.month(), this.MKPI.To_Date__c.day(), 23,59,59); 
+        cc_KPI_Setting__c kpisetting = cc_Util.getKPISetting('ccKPISetting');
+
+        String accepted_recordtype = kpisetting.PaymentRecordType__c;
+        String [] acceptedReccordtypes;
+        if(!String.isBlank(accepted_recordtype)){
+            acceptedReccordtypes = accepted_recordtype.split(',');
+        }
+
+        String accepted_paymentMethod = kpisetting.Paymentmethod__c;
+        String [] acceptedpaymentmethods;
+        if(!String.isBlank(accepted_paymentMethod)){
+            acceptedpaymentmethods = accepted_paymentMethod.split(',');
+        }
+
 
         System.debug('minDateTime =>' + minDateTime);
         System.debug('maxDateTime =>' + maxDateTime);
@@ -178,7 +194,7 @@ public with sharing class cc_KPI_CaculateController {
 
             System.debug('spendings =>' + spendings);
 
-
+            //Payment
             for(AggregateResult arr  :  [SELECT Industry__c Industry__c,
                                                 Xaxis__c Xaxis__c, 
                                                 Special_client__c Special_client__c,                                                 
@@ -192,8 +208,8 @@ public with sharing class cc_KPI_CaculateController {
                                                 AND Effective_date__c <=:  maxDateTime 
                                                 AND Stage__c = 'Done'
                                                 AND QC_Account__r.Type__c != 'Internal'              
-                                                AND Payment_method__c IN ('Cash', 'Bank Transfer', 'Payment Gateway')  
-                                                AND RecordType.Name IN ('Normal payment', 'Real Payment', 'Standard payment') 
+                                                AND Payment_method__c IN :acceptedpaymentmethods
+                                                AND RecordType.DeveloperName IN :acceptedReccordtypes
                                                 AND Sale__c = :this.MKPI.Sales__c                                            
                                             GROUP BY Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
 
@@ -290,7 +306,31 @@ public with sharing class cc_KPI_CaculateController {
             }
             
             update sps;
-        }          
+        }   
+        
+        //Refund Payment
+        for(AggregateResult arr  :  [SELECT Sale__c Sale__c,                             
+                                        SUM(Final_Amount__c) Final_Amount__c
+                                        FROM Payment__c 
+                                        WHERE Effective_Date__c >=: minDateTime
+                                            AND Effective_Date__c <=: maxDateTime
+                                            AND Stage__c = 'Done'
+                                            AND QC_Account__r.Type__c != 'Internal' 
+                                            AND Payment_method__c IN :acceptedpaymentmethods
+                                            AND RecordType.DeveloperName = 'Refund_payment'
+                                            AND Refund_Type__c = 'Refund to Client' 
+                                            AND Sale__c = : this.MKPI.Sales__c                                                    
+                                        GROUP BY Sale__c]){
+
+            
+            Decimal Amount = (Decimal)arr.get('Final_Amount__c');                   
+            String sale = (String) arr.get('Sale__c');            
+
+            if(!String.isBlank(sale)){
+                this.MKPI.TotalRefundAmount__c = Amount;
+            }
+        }
+        
     }
 
     public void calculationActivities(){

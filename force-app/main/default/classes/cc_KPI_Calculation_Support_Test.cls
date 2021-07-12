@@ -6,6 +6,7 @@ public class cc_KPI_Calculation_Support_Test {
         insert ccSetting;  
 
         cc_KPI_Setting__c kpisetting = cc_initData.initKPISetting('ccKPISetting');
+        kpisetting.IncludePayment__c = true;
         insert kpisetting;
 
         List<Account> listAcc = new List<Account>();
@@ -28,14 +29,14 @@ public class cc_KPI_Calculation_Support_Test {
         String period = month +'-' + year ;
 
         Profile pf = [SELECT ID FROM Profile WHERE Name = 'Support Profile'];
-        User u1 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false);
-        User u2 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(2), null, 'Game', 'HN',false);
-        User u3 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(3), null, 'Game-Special', 'HN',false);
-        User u4 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(4), null, 'Local agency HN', 'HN',false);
-        User u5 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(5), null, 'Local Agency HN-Special Client', 'HN',false);
-        User u6 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(6), null, 'Global Agency', 'HN',false);
-        User u7 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(7), null, 'Global Agency', 'HN',true);
-        User u8 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(8), null, 'Local Agency HCM', 'HN',false);
+        User u1 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(1), null, 'Airlines;Real Estate', 'HN',false, 'Direct');
+        User u2 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(2), null, 'Game', 'HN',false, 'Direct');
+        User u3 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(3), null, 'Game-Special', 'HN',false, 'Direct');
+        User u4 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(4), null, 'Local agency HN', 'HN',false, 'Local Agency');
+        User u5 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(5), null, 'Local Agency HN-Special Client', 'HN',false, 'Local Agency');
+        User u6 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(6), null, 'Global Agency', 'HN',false, 'Global Agency');
+        User u7 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(7), null, 'Global Agency', 'HN',true, 'Global Agency');
+        User u8 = cc_initData.initUser(pf.Id, 'Support' ,' User' + String.valueOf(8), null, 'Local Agency HCM', 'HN',false, 'Local Agency');
         
         urs.add(u1);
         urs.add(u2);

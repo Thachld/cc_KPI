@@ -53,6 +53,7 @@ global class cc_KPI_Calculation_Support_Batch implements Database.Batchable<sObj
     global void execute(Database.BatchableContext bc, List<KPI__c> scope){
         
         Map<String,String> mapSale = new  Map<String,String>();
+        Map<String, User> mapUser ;
         Set<String> kpiIds = new Set<String>();
         Map<String, List<Sale_Spending_Payment__c>> mapSP= new Map<String, List<Sale_Spending_Payment__c>>();
         Map<String, List<cc_QCData_wraper>> mapSpending = new Map<String, List<cc_QCData_wraper>>();
@@ -66,6 +67,7 @@ global class cc_KPI_Calculation_Support_Batch implements Database.Batchable<sObj
             }
         }
 
+        mapUser = new map<String, User>([SELECT Id, Sale_Team__c FROM User WHERE Id IN :mapSale.keySet()]);
 
         for(Sale_Spending_Payment__c sp : [SELECT Id, KPI__c, KPI__r.KPIAutoNumber__c, KPI_Number__c, 
                                             Payment_Amount__c, Spending_Amount__c, KPI_Category__c
@@ -78,53 +80,35 @@ global class cc_KPI_Calculation_Support_Batch implements Database.Batchable<sObj
             }                                 
         }
 
-        for(AggregateResult arr  :  [SELECT Support__c Sale__c, 
-                                            Xaxis__c Xaxis__c, 
-                                            Special_client__c Special_client__c, 
+        for(AggregateResult arr  :  [SELECT Support__c Sale__c,                                             
                                             Industry__c Industry__c, 
-                                            Agency__c Agency__c, 
-                                            Is_HN_Region__c Is_HN_Region__c,
-                                            Xaxis_Owner__c Xaxis_Owner__c, 
-                                            Strategic_Client__c Strategic_Client__c,                                 
+                                            Agency__c Agency__c,                                                                           
                                         SUM(Total_Spending__c) Total_Spending__c
                                         FROM QC_Account_Data__c 
                                         WHERE syn_date__c >=: this.minDateTime 
                                             AND syn_date__c <=:  this.maxDateTime 
                                             AND Support__c IN  :mapSale.keySet()    
-                                            AND QC_Account__r.Type__c != 'Internal'                                       
-                                        GROUP BY Support__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c ,Xaxis_Owner__c, Strategic_Client__c]){
+                                            AND QC_Account__r.Type__c != 'Internal' 
+                                            AND QC_Account__r.Type__c != 'External'                                        
+                                        GROUP BY Support__c, Industry__c, Agency__c]){
 
             cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
-            qc.Amount = (Decimal)arr.get('Total_Spending__c');                   
-            String Industry = (String)arr.get('Industry__c');  
-            Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
-            Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
-            String Agency = (String)arr.get('Agency__c');      
-            Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');      
-            Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
-            Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
-            String KPICat;
+            cc_KPI_Calculation_Helper.SpendingWrapper spendingdata = new cc_KPI_Calculation_Helper.SpendingWrapper();
 
-            if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                KPICat = Agency.trim();                              
-            }else if(!String.isBlank(Industry)){
-                if(Industry == 'Retails' || Industry == 'FMCG'){
-                    KPICat = 'FMCG-Retails';
-                }else{
-                    KPICat = Industry.trim();
-                }                
-            }else {
-                KPICat = 'Unknown';
-            }            
-
-            qc.Industry =  Industry;
-            qc.KPICategory = KPICat;
-            qc.SpecialClient = Specialclient;
-            qc.Xaxis = xaxis;
-            qc.Agency = Agency;
-            qc.exists = false;
-
+            Decimal amount = (Decimal)arr.get('Total_Spending__c');                   
+            String industry = (String)arr.get('Industry__c');            
+            String agency = (String)arr.get('Agency__c');      
             String sale = (String) arr.get('Sale__c');
+
+            spendingdata.agency = agency; 
+            spendingdata.industry = industry;   
+            spendingdata.saleId = sale;   
+            spendingdata.Amount =  amount; 
+            User supporturs = mapUser.get(sale);
+
+            qc=cc_KPI_Calculation_Helper.getSupportSpendingKPICategory(supporturs, spendingdata);
+            qc.exists = false;
+            
             if(mapSpending.containsKey(sale) ){
                 mapSpending.get(sale).add(qc);
             }else{
@@ -135,70 +119,51 @@ global class cc_KPI_Calculation_Support_Batch implements Database.Batchable<sObj
 
         if(this.includePayment){
             //Payment
-            String accepted_recordtype = this.kpisetting.PaymentRecordType__c;
+            String acceptedrecordtype = this.kpisetting.PaymentRecordType__c;
             String [] acceptedReccordtypes;
-            if(!String.isBlank(accepted_recordtype)){
-                acceptedReccordtypes = accepted_recordtype.split(',');
+            if(!String.isBlank(acceptedrecordtype)){
+                acceptedReccordtypes = acceptedrecordtype.split(',');
             }
 
-            String accepted_paymentMethod = this.kpisetting.Paymentmethod__c;
+            String acceptedpaymentMethod = this.kpisetting.Paymentmethod__c;
             String [] acceptedpaymentmethods;
-            if(!String.isBlank(accepted_paymentMethod)){
-                acceptedpaymentmethods = accepted_paymentMethod.split(',');
+            if(!String.isBlank(acceptedpaymentMethod)){
+                acceptedpaymentmethods = acceptedpaymentMethod.split(',');
             }
 
             if(acceptedReccordtypes != null && acceptedpaymentmethods !=null){
 
-                for(AggregateResult arr  :  [SELECT Support__c Sale__c, 
-                                                    Xaxis__c Xaxis__c, 
-                                                    Special_client__c Special_client__c, 
+                for(AggregateResult arr  :  [SELECT Support__c Sale__c,                                                    
                                                     Industry__c Industry__c, 
-                                                    Agency__c Agency__c,   
-                                                    Is_HN_Region__c Is_HN_Region__c, 
-                                                    Xaxis_Owner__c Xaxis_Owner__c,      
-                                                    Strategic_Client__c Strategic_Client__c,                               
+                                                    Agency__c Agency__c,         
                                                 SUM(Final_Amount__c) Final_Amount__c
                                                 FROM Payment__c 
                                                 WHERE EffectiveDate__c >=: this.minDate 
                                                     AND EffectiveDate__c <=: this.maxDate 
                                                     AND Stage__c = 'Done'
                                                     AND QC_Account__r.Type__c != 'Internal' 
+                                                    AND QC_Account__r.Type__c != 'External' 
                                                     AND Payment_method__c IN :acceptedpaymentmethods
-                                                    AND RecordType.Name IN :acceptedReccordtypes
+                                                    AND RecordType.DeveloperName IN :acceptedReccordtypes
                                                     AND Support__c IN  :mapSale.keySet()                                                    
-                                                GROUP BY Support__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c, Xaxis_Owner__c,Strategic_Client__c]){
+                                                GROUP BY Support__c, Industry__c, Agency__c]){
 
                     cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
-                    qc.Amount = (Decimal)arr.get('Final_Amount__c');                   
-                    String Industry = (String)arr.get('Industry__c');  
-                    Boolean xaxis = (Boolean)arr.get('Xaxis__c');     
-                    Boolean Specialclient = (Boolean)arr.get('Special_client__c');     
-                    String Agency = (String)arr.get('Agency__c');
-                    Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');            
-                    Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
-                    Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');
+                    cc_KPI_Calculation_Helper.PaymentWrapper paymentdata = new cc_KPI_Calculation_Helper.PaymentWrapper();                                
+                    String industry = (String)arr.get('Industry__c');                      
+                    String agency = (String)arr.get('Agency__c'); 
+                    String sale = (String) arr.get('Sale__c');  
+                    Decimal amount = (Decimal) arr.get('Final_Amount__c');               
 
-                    String KPICat;
-                    if(Agency.trim() == 'Global Agency' || Agency.trim() == 'Local Agency'){   
-                        KPICat = Agency.trim();                                      
-                    }else if(!String.isBlank(Industry)){
-                        if(Industry == 'Retails' || Industry == 'FMCG'){
-                            KPICat = 'FMCG-Retails';
-                        }else{
-                            KPICat = Industry.trim();
-                        }                
-                    }else {
-                        KPICat = 'Unknown';
-                    }                  
+                    paymentdata.agency = agency; 
+                    paymentdata.industry = industry;   
+                    paymentdata.saleId = sale;   
+                    paymentdata.Amount =  amount;                        
+                    User supporturs = mapUser.get(sale);
 
-                    qc.Industry =  Industry;
-                    qc.KPICategory = KPICat;
-                    qc.SpecialClient = Specialclient;
-                    qc.Xaxis = xaxis;   
-                    qc.Agency = Agency;
-                    qc.exists = false;
-
-                    String sale = (String) arr.get('Sale__c');
+                    qc = cc_KPI_Calculation_Helper.getSupportPaymentKPICategory(supporturs, paymentdata);            
+                    qc.exists = false; 
+                    
                     if(mapPayment.containsKey(sale) ){
                         mapPayment.get(sale).add(qc);
                     }else{

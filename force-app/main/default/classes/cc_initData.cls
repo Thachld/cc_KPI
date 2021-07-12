@@ -46,6 +46,32 @@ public class cc_initData {
         return tuser;
     }
 
+    public static User initUser(Id profID, String fName, String lName, String roldId, String kpicate, String region, Boolean xaxisOwner, String team){
+        String orgId = UserInfo.getOrganizationId();
+        String dateString = String.valueof(Datetime.now()).replace(' ','').replace(':','').replace('-','');
+        
+        Integer randomInt = Integer.valueOf(math.rint(math.random() * 1000000));
+        String uniqueName = orgId + dateString + randomInt;
+        User tuser = new User(  firstname = fName,
+                                lastName = lName,                                
+                                email = uniqueName + '@cococ' + orgId + '.com',
+                                Username = uniqueName + '@cococ' + orgId + '.com',
+                                EmailEncodingKey = 'ISO-8859-1',
+                                Alias = lName,
+                                Trac_Name__c = lName,
+                                TimeZoneSidKey = 'Asia/Ho_Chi_Minh',
+                                LocaleSidKey = 'en_US',
+                                LanguageLocaleKey = 'en_US',
+                                UserPermissionsSupportUser  = true,
+                                KPI_Category__c = kpicate,
+                                Region__c = region,
+                                Owner_Xaxis__c = xaxisOwner,
+                                Sale_Team__c = team,
+                                ProfileId = profID,
+                                UserRoleId = roldId );                             
+        return tuser;
+    }
+
     public static HandOver_Minute__c initHandOverMinute(){
         HandOver_Minute__c hom = new HandOver_Minute__c();
         hom.name = 'test';
@@ -156,6 +182,7 @@ public class cc_initData {
         ccSetting.Global_Ads_Leader__c = 'Ads Operation Team leader';
         ccSetting.Xaxis_Name__c = 'Xaxis Inc';
         ccSetting.Hom_assign__c = '0050o00000Xok43AAB';
+        ccSetting.CouponDefaultAssignee__c = '0050o00000XojprAAB';
         return ccSetting;
     }
    
@@ -451,12 +478,11 @@ public class cc_initData {
         return prf;
     }
 
-    public static QC_Integration__c initQcIntegrationSetting(){
+    public static QC_Integration__c initQcIntegrationSetting(String name){
         QC_Integration__c integration = new QC_Integration__c();
-        integration.Name = 'qccampaign';
-        integration.apiuri__c = 'https://api.qc.coccoc.com/v1/campaigns/statistics?';
-        integration.Token__c = '76edd9abc011ec84f5a9782b5a040edba3bdb255';
-        integration.method__c = 'GET';
+        integration.Name = name;        
+        integration.EncryptToken__c = 'WHE0uGENWfuckWOBzM1ZziQ6rZ8WHvCqypoAaopl1om3rS2LYNZcYUsw3h24LlCuEUkVIQs5FboBQnmd+jvNRA==	';
+        integration.Key__c = 'v/T8rWxPKi/2Wnoz4tTYMeAly1L6gOIZu/p+6117pdE=';        
 
         return integration;
     }
@@ -468,7 +494,7 @@ public class cc_initData {
         kpi.SendEmailToSale__c = true;   
         kpi.Sales_Director__c = '0050o00000Xn1UNAAZ';
         kpi.Sales_Director_PA__c = '0050o00000Xn3cmAAB';    
-        kpi.PaymentRecordType__c = 'Normal payment,Real Payment,Standard payment';    
+        kpi.PaymentRecordType__c = 'Normal_payment,Real_Payment,Standard_payment';    
         kpi.Paymentmethod__c = 'Cash,Bank Transfer,Payment Gateway';  
         kpi.IncludePayment__c = true;       
         kpi.SaleEmailtemplate__c = 'Sale_KPI_Template';       
@@ -486,6 +512,18 @@ public class cc_initData {
         jira.restpath__c = 'rest/api/3/issue';       
 
         return jira;
+    }
+
+    public static cc_Payment_Setting__c initPaymentSetting(String name){
+        cc_Payment_Setting__c py = new cc_Payment_Setting__c();
+
+        py.Name = name;
+        py.HOM_Calculation__c = 'Real_Payment';
+        py.Paid_Amount_Calculation__c = 'Real_Payment;Refund_payment';
+        py.Transferred_Payment__c = 'Transfer_payment';
+        py.Weekend__c = 'Saturday;Sunday;';
+
+        return py;
     }
 
     public static KPI__c initKPI(String name, String saleId, String period, Date startdt, Date enddt, String KPIcat){
@@ -572,7 +610,7 @@ public class cc_initData {
         return detail;
     }
 
-    public static TransferSpendingCash__c initTransferSpendingCash (String name, String saleId , String tosaleId, Date from_dt, Date to_dt, String type, string qcAccId ){
+    public static TransferSpendingCash__c initTransferSpendingCash (String name, String saleId , String tosaleId, Date from_dt, Date to_dt, String type,String obj, string qcAccId ){
         TransferSpendingCash__c rq = new TransferSpendingCash__c();
         rq.Name = name;
         rq.From_Sale__c = saleId;
@@ -580,6 +618,7 @@ public class cc_initData {
         rq.From_date__c = from_dt;
         rq.To_date__c = to_dt;        
         rq.Transfer_Type__c = type;
+        rq.Transferobject__c = obj;
         rq.QC_Account__c = qcAccId;
         rq.Status__c = 'New';
         rq.Approval_Status__c = 'Approved';
@@ -657,8 +696,10 @@ public class cc_initData {
 
         if(type == 'Normal'){
             data.real_spending__c = 13 * val;
+            data.TotalQCSpending__C = 13 * val;
         }else{
             data.real_spending__c = 10 * val;
+            data.TotalQCSpending__C = 10 * val;
         }
         
         data.overspending__c = 0;         
@@ -748,8 +789,10 @@ public class cc_initData {
 
         if(type == 'Normal'){
             data.real_spending__c = 13 * val;
+            data.TotalQCSpending__C = 13 * val;
         }else{
             data.real_spending__c = 10 * val;
+            data.TotalQCSpending__C = 10 * val;
         }
         
         data.overspending__c = 0;         
