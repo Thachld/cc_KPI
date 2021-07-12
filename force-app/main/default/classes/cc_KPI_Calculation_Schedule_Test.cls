@@ -268,6 +268,7 @@ public class cc_KPI_Calculation_Schedule_Test {
         String Normal_payment = Schema.SObjectType.Payment__c.getRecordTypeInfosByDeveloperName().get('Normal_payment').getRecordTypeId(); 
         String Real_Payment = Schema.SObjectType.Payment__c.getRecordTypeInfosByDeveloperName().get('Real_Payment').getRecordTypeId();     
         String Standard_payment = Schema.SObjectType.Payment__c.getRecordTypeInfosByDeveloperName().get('Standard_payment').getRecordTypeId();  
+        String refund_payment = Schema.SObjectType.Payment__c.getRecordTypeInfosByDeveloperName().get('Refund_payment').getRecordTypeId();  
         
 
         Integer h = 0;
@@ -280,8 +281,7 @@ public class cc_KPI_Calculation_Schedule_Test {
                     Date dt = startDate.addDays(d);        
                     
                     Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[0].Id, qc.Industry__c, 'Local Agency');    
-                    listPayment.add(py);
-                    
+                    listPayment.add(py);                    
                 }
             }else if(h == 2){
                 for(Integer d = 0; d < 5; d++){
@@ -289,6 +289,10 @@ public class cc_KPI_Calculation_Schedule_Test {
 
                     Payment__c py = cc_initData.initPayment(Normal_payment, transId, qc.Id, dt, urs[1].Id, qc.Industry__c, 'Local Agency');    
                     listPayment.add(py);
+
+                    Payment__c py2 = cc_initData.initPayment(refund_payment, transId, qc.Id, dt, urs[1].Id, qc.Industry__c, 'Local Agency')  ;
+                    py2.Refund_Type__c = 'Refund to Client' ;
+                    listPayment.add(py2);
                 }
             }else if(h == 3){
                 for(Integer d = 0; d < 5; d++){
@@ -330,6 +334,10 @@ public class cc_KPI_Calculation_Schedule_Test {
             h = h + 1;
             
         }
+
+
+       
+
 
         insert listPayment;
 

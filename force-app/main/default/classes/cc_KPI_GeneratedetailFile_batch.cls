@@ -1,4 +1,4 @@
-global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObject> {
+global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObject>, Database.Stateful {
     private String kpiPeriod {get;set;}
     private Datetime minDateTime {get;set;}
     private Datetime maxDateTime {get;set;}
@@ -11,7 +11,7 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
     private List<cc_DMLResult_wrapper> lserrors  {get;set;} 
     private cc_KPI_Setting__c kpisetting {get;set;}
     private Set<String> runinkpis {get;set;}
-    private String sqlStr {get;set;}
+    private String sqlStr {get;set;}    
     
 
     global cc_KPI_GeneratedetailFile_batch(String period, Set<String> pkpi) {
@@ -22,7 +22,7 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
         this.listDeleteSP = new List<Sale_Spending_Payment__c>();
         this.kpiPeriod = period;
         this.kpisetting = cc_Util.getKPISetting('ccKPISetting');
-        this.runinkpis = pkpi;
+        this.runinkpis = pkpi;        
 
         date dtToday = date.today();
         Date rundate;
@@ -69,6 +69,7 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
         Map<String, List<Sale_Spending_Payment__c>> mapSP= new Map<String, List<Sale_Spending_Payment__c>>();
         Map<String, List<cc_QCData_wraper>> mapSpending = new Map<String, List<cc_QCData_wraper>>();
         Map<String, List<cc_QCData_wraper>> mapPayment = new Map<String, List<cc_QCData_wraper>>();
+        Map<String, List<cc_QCData_wraper>> mapRefund = new Map<String, List<cc_QCData_wraper>>();
         List<Attachment> attachs = new List<Attachment>();
 
         for(KPI__c kpi: scope){
@@ -93,7 +94,7 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
                                             Is_HN_Region__c Is_HN_Region__c,
                                             Xaxis_Owner__c Xaxis_Owner__c, 
                                             Strategic_Client__c Strategic_Client__c,              
-                                        SUM(Total_Spending__c) Total_Spending__c
+                                        SUM(Total_Spending__c) Total_Spending__c                                       
                                         FROM QC_Account_Data__c 
                                         WHERE syn_date__c >=: this.minDateTime 
                                             AND syn_date__c <=:  this.maxDateTime 
@@ -112,7 +113,8 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
             Boolean Is_HN_Region = (Boolean)arr.get('Is_HN_Region__c');      
             Boolean Xaxis_Owner = (Boolean)arr.get('Xaxis_Owner__c');
             Boolean Strategic_Client = (Boolean)arr.get('Strategic_Client__c');           
-            String QCAccount = (String)arr.get('QC_Account__c');   
+            String QCAccount = (String)arr.get('QC_Account__c'); 
+
             qcIds.add(QCAccount);
             String KPICat;      
             
@@ -203,7 +205,7 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
                                                 AND QC_Account__r.Type__c != 'Internal' 
                                                 AND Final_Amount__c > 0
                                                 AND Payment_method__c IN :acceptedpaymentmethods 
-                                                AND RecordType.Name IN :acceptedReccordtypes
+                                                AND RecordType.DeveloperName IN :acceptedReccordtypes
                                                 AND Sale__c IN  :mapSale.keySet()                                                    
                                             GROUP BY Sale__c, QC_Account__c, Industry__c, Xaxis__c, Special_client__c, Agency__c, Is_HN_Region__c, Xaxis_Owner__c,Strategic_Client__c]){
 
@@ -278,7 +280,33 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
             }
         }
 
+        //Refund Payment
+        for(Payment__c py  :  [SELECT Sale__c, Name , Final_Amount__c, QC_Account__r.Name
+                                        FROM Payment__c 
+                                        WHERE EffectiveDate__c >=: this.minDate 
+                                            AND EffectiveDate__c <=: this.maxDate 
+                                            AND Stage__c = 'Done'
+                                            AND QC_Account__r.Type__c != 'Internal' 
+                                            AND Payment_method__c IN :acceptedpaymentmethods
+                                            AND RecordType.DeveloperName = 'Refund_payment'
+                                            AND Refund_Type__c = 'Refund to Client' 
+                                            AND Sale__c IN  :mapSale.keySet()]){
 
+            cc_QCData_wraper qc  = new  cc_QCData_wraper(); 
+            qc.Name = py.Name;
+            qc.Amount = py.Final_Amount__c;              
+            qc.QCAccount = py.QC_Account__r.Name;                 
+            String sale = py.Sale__c;    
+
+            if(!String.isBlank(sale)){
+                if(mapRefund.containsKey(sale)){
+                    mapRefund.get(sale).add(qc);
+                }else {
+                    mapRefund.put(sale, new List<cc_QCData_wraper>{qc});
+                }                
+            }                                
+
+        }
 
         //generate file
         Map<String, String> mapQCAccs = new Map<String, String>();
@@ -291,8 +319,10 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
         for(KPI__c kpi : scope){
             List<cc_QCData_wraper> spendings = new List<cc_QCData_wraper>(); 
             List<cc_QCData_wraper> payments = new List<cc_QCData_wraper>();
+            List<cc_QCData_wraper> refunds = new List<cc_QCData_wraper>();
             spendings = mapSpending.get(kpi.Sales__c);
             payments = mapPayment.get(kpi.Sales__c);
+            refunds = mapRefund.get(kpi.Sales__c);
 
             //Spending file
             if(spendings != null){                
@@ -317,7 +347,8 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
                     String csvFile = csvColumnHeader + String.join(csvRowValues, '\n');
                     String filename = (kpi.Trac_Name__c ==null?'': kpi.Trac_Name__c) + ' - Spending Detail - ' + kpi.Period__c + '.csv';
                     Attachment att = new Attachment(Name = filename, Body = Blob.valueOf(csvFile), ParentId = kpi.Id, ContentType='application/vnd.ms-excel', OwnerId = kpi.Sales__c);
-                    attachs.add(att);
+                    attachs.add(att);                    
+                    
                 }
             }
 
@@ -344,9 +375,38 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
                     String csvFile = csvColumnHeader + String.join(csvRowValues, '\n');
                     String filename = (kpi.Trac_Name__c == null?'': kpi.Trac_Name__c) + ' - Payment Detail - ' + kpi.Period__c + '.csv';
                     Attachment att = new Attachment(Name = filename, Body = Blob.valueOf(csvFile), ParentId = kpi.Id, ContentType='application/vnd.ms-excel', OwnerId = kpi.Sales__c);
-                    attachs.add(att);
+                    attachs.add(att);                    
                 }
             }
+
+
+            //Refund
+
+            if(refunds !=null){
+                String csvRFColumnHeader = 'QC Account, PaymentName, Total Amount\n';
+                List<String> csvRowValues = new List<String>();
+                for(cc_QCData_wraper rf: refunds){
+
+                    if(rf.Amount > 0){                        
+                        String QCAccountName = rf.QCAccount ==null? '' : rf.QCAccount;                        
+                        String pyname = rf.Name ==null? '' : rf.Name;                        
+                        String amount = String.valueOf(rf.Amount);
+
+                        String csvRow = QCAccountName + ','  + pyname + ',' + amount; 
+                        csvRowValues.add(csvRow);
+                    }
+                }
+
+                if(csvRowValues !=null){
+                    String csvFile = csvRFColumnHeader + String.join(csvRowValues, '\n');
+                    String filename = (kpi.Trac_Name__c == null?'': kpi.Trac_Name__c) + ' - Refund Payment Detail - ' + kpi.Period__c + '.csv';
+                    Attachment att = new Attachment(Name = filename, Body = Blob.valueOf(csvFile), ParentId = kpi.Id, ContentType='application/vnd.ms-excel', OwnerId = kpi.Sales__c);
+                    attachs.add(att);                    
+                }
+            }
+
+
+
 
         }
 
@@ -356,7 +416,10 @@ global class cc_KPI_GeneratedetailFile_batch implements Database.Batchable<SObje
         }
     }
 
-    global void finish(Database.BatchableContext bc){        
-
+    global void finish(Database.BatchableContext bc){ 
+        Set<String> reporttype = new Set<String>();        
+        reporttype.add('Sale_KPI');        
+        cc_KPI_SendEmail_Batch batch = new cc_KPI_SendEmail_Batch(this.kpiPeriod, reporttype, this.runinkpis);
+        database.executeBatch(batch,20);
     }
 }
